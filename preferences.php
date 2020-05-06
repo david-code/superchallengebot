@@ -30,6 +30,7 @@ class Preferences
     function __construct()
     {
         $preferences = getPreferences();
+        date_default_timezone_set("utc");
         // $this->EPOCH = new DateTime("now");
         //$this->EPOCH = new DateTime::createFromFormat('d/m/Y','01/01/2017');
         $this->EPOCH = new DateTime('2000-01-01');

@@ -1,6 +1,6 @@
 <?php
 include_once dirname(__FILE__)."/helpers.php";
-include_once dirname(__FILE__)."/config-files/configuration.php";
+include_once dirname(__FILE__)."/configuration.php";
 
 // Do we use the testing database or the release one?
 
@@ -9,14 +9,14 @@ $link = login(DB_NAME.$testing);
 function login($databasename)
 {
 
-    // Connects to the Database 
+    // Connects to the Database
     global $testing;
 
-    $link = mysqli_connect($testing ? "server_url" : DB_HOST , DB_USER , DB_PASSWORD , DB_NAME);
-        
+    $link = mysqli_connect(DB_HOST , DB_USER , DB_PASSWORD , DB_NAME);
+
     if(!$link)
         die(mysqli_connect_error());
-    
+
     return $link;
 }
 

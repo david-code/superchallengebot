@@ -27,7 +27,7 @@ site:
   volumes_from:
     - "sitedata"
   ports:
-    - "80:80"
+    - "8000:80"
     - "3306:3306"
 
 # Stores persistent data volumes for our site container.  We need this
