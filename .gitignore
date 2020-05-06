@@ -1,1 +1,5 @@
 /dockerconfig/
+# Ignore any locally installed composer
+composer.phar
+
+/vendor/

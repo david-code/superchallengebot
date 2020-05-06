@@ -1,0 +1,11 @@
+{
+  "name": "language-learners/superchallengebot",
+  "description": "A twitter bot to check users' progress for the Super Challenge",
+  "type": "project",
+  "license": "MIT",
+  "require": {},
+  "require-dev": {
+    "phpunit/phpunit": "^9.1"
+  }
+
+}
