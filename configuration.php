@@ -1,20 +1,42 @@
 <?php
-// ** MySQL settings - You can get this info from your web host ** //
-define('DB_NAME', '');
-/** MySQL database username */
-define('DB_USER', '');
-/** MySQL database password */
-define('DB_PASSWORD', '');
-/** MySQL hostname */
-define('DB_HOST', 'localhost');
-/** Database Charset to use in creating database tables. */
-define('DB_CHARSET', 'utf8');
-/** The Database Collate type. Don't change this if in doubt. */
-define('DB_COLLATE', '');
-/*************************************/
-/** No need to edit below this line **/
-/*************************************/
+
+namespace SCBot\Configuration;
+
 /**  Setup Error Reporting */
 ini_set('error_reporting', E_ALL|E_STRICT);
 ini_set('display_errors', 1);
+
+class Configuration
+{
+    public $dbName;
+    public $dbUser;
+    public $dbPassword;
+    public $dbHost;
+    public $dbCharset;
+    public $dbCollate;
+
+    function __construct($dbName, $dbUser, $dbPassword, $dbHost, $dbCharset, $dbCollate) {
+        $this->dbName = $dbName;
+        $this->dbUser = $dbUser;
+        $this->dbPassword = $dbPassword;
+        $this->dbHost = $dbHost;
+        $this->dbCharset = $dbCharset;
+        $this->dbCollate = $dbCollate;
+    }
+
+    /**
+     * Load the configuration from a file
+     */
+    public static function loadFromFile(string $filename) {
+        $settings = parse_ini_file($filename);
+        return new Configuration(
+            $settings['DB_NAME'],
+            $settings['DB_USER'],
+            $settings['DB_PASSWORD'],
+            $settings['DB_HOST'],
+            $settings['DB_CHARSET'],
+            $settings['DB_COLLATE']
+        );
+    }
+}
 ?>
