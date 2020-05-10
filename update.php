@@ -1,7 +1,78 @@
 <?php
+
+namespace SCBot\Update;
+
 require_once('database.php');
 require_once('preferences.php');
 require_once('helpers.php');
+
+class Updater
+{
+    protected $db;
+    protected $prefs;
+    protected $testing;
+    protected $twit;
+
+    public function __construct($db, $prefs,
+                                $testing, $twit)
+    {
+        $this->db = $db;
+        $this->prefs = $prefs;
+        $this->testing = $testing;
+        $this->twit = $twit;
+    }
+
+    /**
+     * Run update process
+     */
+    public function update()
+    {
+        $lastupdate = $this->db->getPreference('last-update');
+        if (!$testing && lastupdate > strtotime('1 minute ago'))
+        {
+            loginfo('update() called but not run');
+            return;
+        }
+        // logic for new users
+        $this->twit->updateTwitterFollowing();
+        $newUsers = $this->twit->newUsers();
+        $this->db->updateParticipants($newUsers);
+
+        // logic for scores
+        $success = $this->updateScores();
+
+        $this->db->setPreference('last_update', time());
+    }
+
+    /**
+     * Update the twitter feed with info
+     */
+    public function updateScores()
+    {
+        $lastreadid = $this->db->getPreference('last_twitter_id');
+        $tweets = $this->twit->getUnprocessedTweets($lastreadid);
+        if (count($tweets) === 0)
+        {
+            loginfo('No tweets to read!');
+            return false;
+        }
+
+        foreach ($tweets as $tweet)
+        {
+            $lastreadid = processTweet($tweet);
+        }
+
+        $this->db->setPreference('last_twitter_id', $lastreadid);
+        return true;
+    }
+
+
+    public function processTweet()
+    {
+
+    }
+
+}
 
 function update()
 {
@@ -9,11 +80,11 @@ function update()
     global $testing;
     $lastupdate = getPreference("last_update");
     if(!$testing && $lastupdate > strtotime('1 minute ago'))
-        {loginfo("update() called but not run"); return;}
-        
+    {loginfo("update() called but not run"); return;}
+
     // Check local twitter feeds (langchallenge@twitter) for all participants
     $success = updateTwitterFeed($lastupdate);
-        
+
     // Done!
     setPreference("last_update", time());
 }

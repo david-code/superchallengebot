@@ -1,7 +1,4 @@
 <?php
-
-// Load preferences from the database, assuming they're not going to change over
-// the course of our session.
 require_once('database.php');
 
 class Preferences
@@ -27,17 +24,21 @@ class Preferences
     public $END_DATE = "";
 
 
-    function __construct()
+    public function __construct($startDate, $endDate, $bookPages,
+                       $filmMinutes, $consumerKey,
+                       $consumerSecretKey, $oauthToken,
+                       $oauthSecretToken)
     {
-        $preferences = getPreferences();
-        // $this->EPOCH = new DateTime("now");
-        //$this->EPOCH = new DateTime::createFromFormat('d/m/Y','01/01/2017');
-        $this->EPOCH = new DateTime('2000-01-01');
+        $this->START_DATE = $startDate;
+        $this->END_DATE = $endDate;
+        $this->BOOK_PAGES = $bookPages;
+        $this->FILM_MINUTES = $filmMinutes;
+        $this->CONSUMER_KEY = $consumerKey;
+        $this->CONSUMER_SECRET_KEY = $consumerSecretKey;
+        $this->OAUTH_TOKEN = $oauthToken;
+        $this->OAUTH_SECRET_TOKEN = $oauthSecretToken;
 
-        $this->START_DATE = $preferences['StartDate'];
-        $this->END_DATE = $preferences['EndDate'];
-        $this->BOOK_PAGES = $preferences['book_pages'];
-        $this->FILM_MINUTES = $preferences['film_minutes'];
+        $this->EPOCH = new DateTime('2000-01-01');
 
         $this->TARGETS = array(
             'book' => $this->BOOK_PAGES,
@@ -62,15 +63,10 @@ class Preferences
         $this->CONTENTTYPE = array(
             'pagesread' => 'book',
             'minuteswatched' => 'film');
-
-        $this->CONSUMER_KEY = $preferences['consumer_key'];
-        $this->CONSUMER_SECRET_KEY = $preferences['consumer_secret_key'];
-        $this->OAUTH_TOKEN = $preferences['oauth_token'];
-        $this->OAUTH_SECRET_TOKEN = $preferences['oauth_secret_token'];
     }
 
-   function keywordExistsAtPosition($string, $position)
-   {
+    function keywordExistsAtPosition($string, $position)
+    {
         foreach($this->KEYWORDS as $keyword)
         {
             if(substr($string, $position, strlen($keyword)) == $keyword)
@@ -79,7 +75,5 @@ class Preferences
         return false;
     }
 }
-
-$preferences = new Preferences();
 
 ?>

@@ -2,18 +2,18 @@
 
 require_once('configuration.php');
 
-use scbot\configuration\Configuration;
-use scbot\database\Database;
-use scbot\preferences\Preferences;
-use scbot\update\Updater;
+use SCBot\Configuration\Configuration;
 
 $config = Configuration::loadFromFile('bot.conf');
-var_dump($config);
 /*
-$conn = Database::connect($config);
-$pref = $conn->loadPreferences();
-$updater = new Updater($pref);
-$updater->update();
+try {
+   $db = DatabaseQuery::from($config);
+   $pref = $conn->loadPreferences();
+   $updater = new Updater($pref, $conn, $twit);
+   $updater->update();
+} catch (Exception $e) {
+   die($e->message);
+}
 */
 
 ?>

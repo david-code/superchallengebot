@@ -1,23 +1,80 @@
 <?php
+namespace SCBot\Database;
 include_once dirname(__FILE__)."/helpers.php";
-include_once dirname(__FILE__)."/config-files/configuration.php";
+//include_once dirname(__FILE__)."/config-files/configuration.php";
+
+require_once("configuration.php");
 
 // Do we use the testing database or the release one?
+//$link = login(DB_NAME.$testing);
 
-$link = login(DB_NAME.$testing);
+class DatabaseQuery {
 
-function login($databasename)
-{
+    private $conn;
 
-    // Connects to the Database 
-    global $testing;
+    function __construct($conn) {
+        $this->conn = $conn;
+    }
 
-    $link = mysqli_connect($testing ? "server_url" : DB_HOST , DB_USER , DB_PASSWORD , DB_NAME);
-        
-    if(!$link)
-        die(mysqli_connect_error());
-    
-    return $link;
+    public static function fromConfig($config)
+    {
+        $mysqli = new mysqli($config->dbHost, $config->dbUser,
+                             $config->dbPassword, $config->dbName);
+        if ($mysqli->connect_errno) {
+            throw new Exception($mysqli->connect_error);
+        }
+        return new DatabaseQuery($mysqli);
+    }
+
+
+    public function getPreferences()
+    {
+        $data = $this->conn->query("SELECT * FROM Preferences");
+        if (!$data) {
+            throw new Exception("Failed to retrieve preferences: " . $this->conn->error());
+        }
+
+        $prefs = Array();
+        while($info = $data->fetch_assoc())
+            $prefs[$info['Name']] = $info['Value'];
+
+        return new Preferences($prefs['StartDate'],
+                               $prefs['EndDate'],
+                               $prefs['book_pages'],
+                               $prefs['film_minutes'],
+                               $prefs['consumer_key'],
+                               $prefs['consumer_secret_key'],
+                               $prefs['oauth_token'],
+                               $prefs['oauth_secret_token']);;
+    }
+
+    public function getPreference()
+    {
+        $data = $this->conn->query("SELECT Value FROM Preferences " .
+            "WHERE Name = '".$name."'");
+        if (!$data) {
+            throw new Exception("Error retrieving preference: " . $this->conn->error());
+        }
+
+        $info = $data->fetch_assoc();
+        return $info['Value'];
+    }
+
+    public function setPreference($name, $value)
+    {
+        $data = $this->conn->query("INSERT INTO Preferences (Name, Value)
+        VALUES ('".$name."', '".$value."')
+        ON DUPLICATE KEY UPDATE Value = '".$value."'");
+        if (!$data) {
+            throw new Exception("Error settings preferences: " . $this->conn->error());
+        }
+    }
+
+    public function newUsers()
+    {
+
+    }
+
 }
 
 function safe($string)
@@ -31,9 +88,9 @@ function callStoredProcedure($procedure)
     global $link;
     // if (DEBUGGING) { echo  "CALL ".$procedure ."<BR>";}
     $resultset = mysqli_multi_query($link, "CALL ".$procedure)
-        or die(__FILE__.__LINE__.mysqli_error($link).$procedure);
+    or die(__FILE__.__LINE__.mysqli_error($link).$procedure);
     $data = mysqli_store_result($link);
-    
+
     // clear remaining sets in the resultset before returning
     while (mysqli_more_results($link)) {mysqli_next_result($link);}
     return $data;
@@ -52,7 +109,7 @@ function getPreference($name) {
     $data = mysqli_query($link, "SELECT Value FROM Preferences
         WHERE Name = '".$name."'")
     or die(__FILE__.__LINE__.mysqli_error($link));
-    
+
     $info = mysqli_fetch_array($data);
     return $info['Value'];
 }
@@ -60,8 +117,8 @@ function getPreference($name) {
 function getPreferences() {
     global $link;
     $data = mysqli_query($link, "SELECT * FROM Preferences")
-		or die(__FILE__.__LINE__.mysqli_error($link));
-    
+    or die(__FILE__.__LINE__.mysqli_error($link));
+
     $preferences = Array();
     while($info = mysqli_fetch_array($data))
         $preferences[$info['Name']] = $info['Value'];

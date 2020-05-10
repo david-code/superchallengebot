@@ -15,7 +15,8 @@ class Configuration
     public $dbCharset;
     public $dbCollate;
 
-    function __construct($dbName, $dbUser, $dbPassword, $dbHost, $dbCharset, $dbCollate) {
+    function __construct($dbName, $dbUser, $dbPassword, $dbHost,
+                         $dbCharset = "utf-8", $dbCollate = "") {
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
         $this->dbPassword = $dbPassword;

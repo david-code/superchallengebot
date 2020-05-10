@@ -15,6 +15,8 @@ https://dev.twitter.com/oauth/overview/faq
 
 # Dependencies
 
+- curl extension
+
 Unit tests:
 
 - dom extension
