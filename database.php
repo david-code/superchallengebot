@@ -51,7 +51,7 @@ class DatabaseQuery {
     public function getPreference()
     {
         $data = $this->conn->query("SELECT Value FROM Preferences " .
-            "WHERE Name = '".$name."'");
+                                   "WHERE Name = '".$name."'");
         if (!$data) {
             throw new Exception("Error retrieving preference: " . $this->conn->error());
         }
@@ -75,320 +75,343 @@ class DatabaseQuery {
 
     }
 
-}
+    public function findLanguageInString($string)
+    {
+        $columnnames = array("Code", "Name");
+        $data = $this->conn->query(
+            "SELECT ".implode(", ", $columnnames)
+          . " FROM Language"
+        );
+        if (!$data)
+        {
+            throw new Exception("Error querying language: "
+                              . $this->conn->error());
+        }
 
-function safe($string)
-{
-    global $link;
-    return mysqli_real_escape_string($link, strip_tags($string));
-}
+        // check against all languages in the database
+        while($info = $this->conn->fetch_assoc($data))
+        {
+            // check against all specified columns
+            foreach($columnnames as $columnname)
+            {
+                $result = findHashtagInString(
+                    strtolower($info[$columnname]), $string);
+                if($result !== false)
+                    return $info;
+            }
+        }
 
-function callStoredProcedure($procedure)
-{
-    global $link;
-    // if (DEBUGGING) { echo  "CALL ".$procedure ."<BR>";}
-    $resultset = mysqli_multi_query($link, "CALL ".$procedure)
-    or die(__FILE__.__LINE__.mysqli_error($link).$procedure);
-    $data = mysqli_store_result($link);
+        return null;
+    }
 
-    // clear remaining sets in the resultset before returning
-    while (mysqli_more_results($link)) {mysqli_next_result($link);}
-    return $data;
-}
+    public function insertParticipant($username, $displayname,
+                                      $feedcode = "none",
+                                      $feeddata = "")
+    {
+        // insert or update
+        $data = $this->conn->query(
+            "INSERT INTO Participants (UserName, DisplayName, FeedData)"
+          . "VALUES ('".$this->safe($username).
+            "', '".$this->safe($displayname).
+            "', '".$this->safe($feeddata)."')
+                ON DUPLICATE KEY UPDATE UserName=UserName");
+        if (!$data)
+        {
+            throw new Exception("Failure inserting participant "
+                              . $username . ": "
+                              . $this->conn->error());
+        }
+    }
 
-function setPreference($name, $value) {
-    global $link;
-    $data = mysqli_query($link, "INSERT INTO Preferences (Name, Value)
-        VALUES ('".$name."', '".$value."')
-        ON DUPLICATE KEY UPDATE Value = '".$value."'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-}
 
-function getPreference($name) {
-    global $link;
-    $data = mysqli_query($link, "SELECT Value FROM Preferences
-        WHERE Name = '".$name."'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
+    public function insertEntry($username, $languagecode)
+    {
 
-    $info = mysqli_fetch_array($data);
-    return $info['Value'];
-}
+        // Check for double entries
+        $query = "SELECT UserName, LanguageCode FROM Entries "
+               . "WHERE UserName='". $this->safe($username)
+              .  "' AND LanguageCode='".safe($languagecode)."'";
+        $result = $this->db->query($link, $query);
 
-function getPreferences() {
-    global $link;
-    $data = mysqli_query($link, "SELECT * FROM Preferences")
-    or die(__FILE__.__LINE__.mysqli_error($link));
+        if (!$result)
+        {
+            throw new Exception("Failure inserting entry " .
+                                $username . "," . $languagecode
+                                . "): " . $this->conn->error());
+        }
 
-    $preferences = Array();
-    while($info = mysqli_fetch_array($data))
-        $preferences[$info['Name']] = $info['Value'];
+        if ($result->num_rows)
+        {
+            return false;
+        }
+        else
+        {
+            // Insert a new entry
+            $query = $this->conn->query("INSERT INTO Entries "
+                                      . "(UserName, LanguageCode)"
+                                      . " VALUES ('"
+                                        . $this->safe($username)
+                                      . "', '"
+                                      . $this->safe($languagecode)
+                                        . "')");
+            if (!$query)
+            {
+                throw new Exception("Failure inserting entry " .
+                                    $username . "," . $languagecode .
+                                    "): " . $this->conn->error());
+            }
+            return true;
 
-    return $preferences;
-}
+        }
+    }
 
-function getStatistics() {
-    global $link;
-    $data = mysqli_query($link, "SELECT 
-        SUM(PagesRead) AS TotalPagesRead, 
-        SUM(MinutesWatched) AS TotalMinutesWatched 
-            FROM Entries")
-        or die(__FILE__.__LINE__.mysqli_error($link));
-        
-    return mysqli_fetch_array($data);
-}
 
-function getLanguageName($code) {
-    global $link;
-    $data = mysqli_query($link, "SELECT Name FROM Language
-        WHERE Code = '".$code."'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    $info = mysqli_fetch_array($data);
-    return $info['Name'];
-}
+    function getAction($actionid)
+    {
+        $data = $this->conn->query("SELECT * FROM Actions "
+                                   . " WHERE Id = '$actionid'");
+        if (!$data) {
+            throw new Exception("Failure getting action "
+                                . $actionid . ": "
+                                . $this->conn->error());
+        }
 
-function getActionEntryId($actionid) {
-    global $link;
-    $data = mysqli_query($link, "SELECT EntryId FROM Actions
-        WHERE Id = '$actionid'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    $info = mysqli_fetch_array($data);
-    return $info['EntryId'];
-}
+        return $data->fetch_assoc();
+    }
 
-function getAction($actionid) {
-    global $link;
-    $data = mysqli_query($link, "SELECT * FROM Actions
-        WHERE Id = '$actionid'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    return mysqli_fetch_array($data);
-}
+    function insertActionRecord($actionid, $actioncode, $entryid,
+                                $amount, $data = "", $time = "NOW()")
+    {
+        if ($time != "NOW()")
+        {
+            $time = "'$time'";
+        }
+        $data = $this->conn->query("INSERT INTO Actions "
+                                   . "(Id, EntryId, ActionCode, "
+                                   . "Time, AmountData, TextData) "
+                                   . "VALUES ('$actionid', $entryid, "
+                                   . "'$actioncode', $time, "
+                                   . $this->safe($amount).", '"
+                                   . $this->safe($data)."')");
+        if (!$data) {
+            throw new Exception(
+                "Error inserting action record: $actionid"
+                . $this->conn->error());
+        }
+    }
 
-function insertParticipant($username, $displayname, $feedcode = "none", $feeddata = "") 
-{
-    // insert or update
-    global $link;
-    $data = mysqli_query($link, 
-        "INSERT INTO Participants (UserName, DisplayName, FeedData) 
-        VALUES ('".safe($username).
-            "', '".safe($displayname).
-            "', '".safe($feeddata)."') 
-                ON DUPLICATE KEY UPDATE UserName=UserName")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-}
+    // increments the entry record and returns the new total
+    function incrementEntryRecord($id, $fieldname, $value)
+    {
+        // update
+        $data = $this->conn->query(
+            "UPDATE Entries "
+            . "SET ".$fieldname."=".$fieldname."+".$value
+            . " WHERE Id=".$id);
+        if (!$data)
+        {
+            throw new Exception(
+                "Error updating entry while incrementing $id: "
+                . $this->conn->error());
+        }
 
-function updateParticipant($username, $displayname, $location, $imageurl, $websiteurl, $about)
-{
-    global $link;
-    mysqli_query($link, "UPDATE Participants 
+        // return the new value
+        $result = $this->db->conn(
+            "SELECT ".$fieldname.
+            " FROM Entries WHERE Id=".$id);
+        if (!$result) {
+            throw new Exception(
+                "Error accessing updated entry while incrementing $id: "
+                . $this->conn->error());
+        }
+
+        $info = $result->fetch_assoc();
+        return $info[$fieldname];
+    }
+
+    function removeEntry($id)
+    {
+        // Delete entry
+        $data = $this->conn->query(
+            "DELETE FROM Entries WHERE Id=$id"
+        );
+        if (!$data)
+        {
+            throw new Exception(
+                "Error deleting entry $id: "
+                . $this->conn->error());
+        }
+    }
+
+    function getUpdateNames($count = 100)
+    {
+        // where did we start off?
+        $lastindex = $this->getPreference("last_userupdate_index");
+
+        // return those rows
+        $namesresult = $this->conn->query(
+            "SELECT UserName FROM Participants LIMIT "
+            .$lastindex.", ".$count);
+        if (!$namesresult)
+        {
+            throw new Exception(
+                "Error getting last user update index: "
+                . $this->conn->error()
+            );
+        }
+
+        $namearray = array();
+        while($namerow = $this->conn->fetch_assoc($namesresult))
+            $namearray[] = $namerow['UserName'];
+
+        // how many rows, if we need to wrap
+        $countresult = $this->conn->query(
+            "SELECT COUNT(*) FROM Participants");
+
+        if (!$countresult)
+        {
+            throw new Exception(
+                "Error counting participants"
+            );
+        }
+
+        $totalcount = $this->conn->fetch_array($countresult);
+        $lastindex += $count;
+        if($lastindex >= $totalcount[0])
+            $lastindex = 0;
+
+        // Save the last updated index (wrapping if necessary)
+        $this->setPreference("last_userupdate_index", $latindex);
+
+        return $namearray;
+    }
+
+    function updateAction($actionid, $newprefix)
+    {
+        // we must at least have something!
+        if(!$actionid)
+            return false;
+
+        $result = $this->conn->query(
+            "UPDATE Actions "
+            . "SET ActionCode=CONCAT('$newprefix"."_', SUBSTR(ActionCode, 5))"
+            . "WHERE id='$actionid'");
+
+        if (!$result) {
+            throw new Exception(
+                "Error updating action $actionid with $newprefix: "
+                . $this->conn->error());
+        }
+
+        // we should always affect 1 row
+        return ($result->affected_rows($link) == 1);
+    }
+
+    function getActionEntryId($actionid) {
+        $data = $this->conn->query(
+            "SELECT EntryId FROM Actions "
+            . "WHERE Id = '$actionid'");
+        if (!$data)
+        {
+            throw new Exception(
+                "Failing getting action entry id for $actionid: "
+                . $this->conn->error());
+        }
+
+        $info = $data->fetch_array();
+        return $info['EntryId'];
+    }
+
+    function getUniqueEntry($username, $languagecode = "")
+    {
+        // only filter by language if one is provided
+        $result = $this->conn->query(
+            "SELECT Id FROM Entries "
+            . "WHERE UserName = '".safe($username)."' ".
+            ($languagecode == "" ? "" :
+             "AND LanguageCode = '".safe($languagecode)."'"));
+        if (!$result)
+        {
+            throw new Exception(
+                "Failed to get unique entry for $username "
+                . $this->conn->error()
+            );
+        }
+
+        // no data, or too much data
+        if($this->conn->num_rows($result) < 1)
+            return -1;
+        else if($this->conn->num_rows($result) > 1)
+            return -2;
+
+        // otherwise, the id as promised
+        $info = $result->fetch_array();
+        return $info;
+    }
+
+    function updateEntryBadges($id, $longestsprint, $longeststreak, $currentstreak)
+    {
+        // update
+        $data = $this->db->query(
+            "UPDATE Entries SET LongestSprint='$longestsprint', "
+            . "LongestStreak='$longeststreak', "
+            . "CurrentStreak='$currentstreak' "
+            . "WHERE Id=$id");
+        if (!$data)
+        {
+            throw new Exception(
+                "Error updating entry badges for $id: "
+                . $this->conn->error()
+            );
+        }
+    }
+
+    function callStoredProcedure($procedure)
+    {
+        $resultset = $this->conn->multi_query("CALL ".$procedure);
+        if (!$resultset)
+        {
+            throw new Exception(
+                "Error calling stored procedure $procedure: "
+                . $this->conn->error()
+            );
+        }
+        $data = $resultset->store_result($link);
+
+        // clear remaining sets in the resultset before returning
+        while ($this->conn->more_results())
+        {
+            $this->conn->next_result($link);
+        }
+        return $data;
+    }
+
+    function updateParticipant($username, $displayname, $location,
+                               $imageurl, $websiteurl, $about)
+    {
+       $result = $this->conn->query("UPDATE Participants
         SET DisplayName='".safe($displayname)."',
             Location='".safe($location)."',
             ImageUrl='".safe($imageurl)."',
             WebsiteUrl='".safe($websiteurl)."',
             About='".safe($about)."'
-        WHERE UserName='".$username."'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-}
+        WHERE UserName='".$username."'");
 
-function insertEntry($username, $languagecode)
-{
-    global $link;
-    
-    // Check for double entries
-    $query = "SELECT UserName, LanguageCode FROM Entries
-        WHERE UserName='".safe($username).
-        "' AND LanguageCode='".safe($languagecode)."'";
-    $result = mysqli_query($link, $query) or die(__FILE__.__LINE__.mysqli_error($link));
-
-    if (mysqli_num_rows($result) )
-    {
-        return false;
+       if (!$result)
+       {
+           throw new Exception(
+               "Error updating participant $username: "
+               . $this->conn->error()
+           );
+       }
     }
-    else
+
+    function safe($string)
     {
-        // Insert a new entry
-        $query = mysqli_query($link, "INSERT INTO Entries 
-            (UserName, LanguageCode) 
-            VALUES ('".safe($username).
-                "', '".safe($languagecode)."')")
-        or die(__FILE__.__LINE__.mysqli_error($link));
-        return true;
+        return $this->conn->real_escape_string($link, strip_tags($string));
     }
-}
 
-function removeEntry($id)
-{
-    // Delete entry
-    global $link;
-    $data = mysqli_query($link, "DELETE FROM Entries 
-        WHERE Id=".$id)
-    or die(__FILE__.__LINE__.mysqli_error($link));
-}
 
-function incrementPagesRead($actionid, $entryid, $pages, $title = "")
-{
-    insertActionRecord($actionid, 'inc_pagesread', $entryid, $pages, $title);
-    return incrementEntryRecord($entryid, 'PagesRead', $pages);
-}
-
-function incrementMinutesWatched($actionid, $entryid, $minutes, $title = "")
-{
-    insertActionRecord($actionid, 'inc_minuteswatched', $entryid, $minutes, $title);
-    return incrementEntryRecord($entryid, 'MinutesWatched', $minutes);;
-}
-
-// increments the entry record and returns the new total
-function incrementEntryRecord($id, $fieldname, $value)
-{
-    // update
-    global $link;
-    $data = mysqli_query($link, "UPDATE Entries
-        SET ".$fieldname."=".$fieldname."+".$value.
-        " WHERE Id=".$id)
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    // return the new value
-    $result = mysqli_query($link, "SELECT ".$fieldname.
-            " FROM Entries WHERE Id=".$id)
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    $info = mysqli_fetch_array($result);
-    return $info[$fieldname];
-}
-
-function updateEntryBadges($id, $longestsprint, $longeststreak, $currentstreak)
-{
-    // update
-    global $link;
-    $data = mysqli_query($link, "UPDATE Entries
-        SET LongestSprint='$longestsprint', LongestStreak='$longeststreak', CurrentStreak='$currentstreak'
-        WHERE Id=$id")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-}
-
-function insertActionRecord($actionid, $actioncode, $entryid, $amount, $data = "", $time = "NOW()")
-{
-    global $link;
-    if($time != "NOW()") {$time = "'$time'";}
-    $data = mysqli_query($link, "INSERT INTO Actions 
-        (Id, EntryId, ActionCode, Time, AmountData, TextData) 
-        VALUES ('$actionid', $entryid, '$actioncode', $time, ".
-        safe($amount).", '".safe($data)."')")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-}
-
-function getActionCode($actionid)
-{
-    global $link;
-    $data = mysqli_query($link, "SELECT ActionCode FROM Actions
-        WHERE Id = '$actionid'")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    // no data
-    if(mysqli_num_rows($data) < 1)
-        return "";
-    
-    // the code
-    $info = mysqli_fetch_array($data);
-    return $info['ActionCode'];
-}
-
-function updateAction($actionid, $newprefix)
-{
-    // we must at least have something!
-    if(!$actionid)
-        return false;
-            
-    global $link;
-    $result = mysqli_query($link, "UPDATE Actions
-        SET ActionCode=CONCAT('$newprefix"."_', SUBSTR(ActionCode, 5))
-        WHERE id='$actionid'") //LEFT(ActionCode, 4)='inc_' AND 
-    or die(__FILE__.__LINE__.mysqli_error($link));
-
-    // we should always affect 1 row
-    return (mysqli_affected_rows($link) == 1);
-}
-
-function getUniqueEntry($username, $languagecode = "")
-{
-    // only filter by language if one is provided
-    global $link;
-    $result = mysqli_query($link, "SELECT Id FROM Entries
-        WHERE UserName = '".safe($username)."' ".
-        ($languagecode == "" ? "" : 
-            "AND LanguageCode = '".safe($languagecode)."'"))
-    or die(__FILE__.__LINE__.mysqli_error($link));
-    
-    // no data, or too much data
-    if(mysqli_num_rows($result) < 1)
-        return -1;
-    else if(mysqli_num_rows($result) > 1)
-        return -2;
-    
-    // otherwise, the id as promised
-    $info = mysqli_fetch_array($result);   
-    return $info;
-}
-
-function getUpdateNames($count = 100)
-{
-    // where did we start off?
-    $lastindex = getPreference("last_userupdate_index");
-    
-    // return those rows
-    global $link;
-    /* echo "SELECT UserName FROM Participants LIMIT ".$lastindex." ".$count ; */
-    /* $namesresult = mysqli_query($link, "SELECT UserName FROM Participants  */
-    /*     LIMIT ".$lastindex.", ".$count) */
-    /*         or die(__FILE__.__LINE__.mysqli_error($link)); */
-    // echo "SELECT UserName FROM Participants LIMIT ".$lastindex." ".$count . "\n" ;
-    $namesresult = mysqli_query($link, "SELECT UserName FROM Participants 
-        LIMIT ".$lastindex.", ".$count)
-            or die(__FILE__.__LINE__.mysqli_error($link));
-
-    $namearray = array();
-    while($namerow = mysqli_fetch_assoc($namesresult))
-        $namearray[] = $namerow['UserName'];
-
-    // how many rows, if we need to wrap
-    $countresult = mysqli_query($link, "SELECT COUNT(*) FROM Participants")
-            or die(__FILE__.__LINE__.mysqli_error($link));
-    $totalcount = mysqli_fetch_array($countresult);
-    $lastindex += $count;
-    if($lastindex >= $totalcount[0]) 
-        $lastindex = 0;
-    
-    // Save the last updated index (wrapping if necessary)
-    setPreference("last_userupdate_index", $lastindex);
-
-    return $namearray;
-}
-
-function findLanguageInString($string)
-{
-    // get a list of options
-    global $preferences;
-    global $link;
-    $columnnames = array("Code", "Name");
-    $data = mysqli_query($link, "SELECT ".implode(", ", $columnnames)." FROM Language")
-    or die(__FILE__.__LINE__.mysqli_error($link));
-
-    // check against all languages in the database
-    while($info = mysqli_fetch_array($data))
-    {
-        // check against all specified columns
-        foreach($columnnames as $columnname)
-        {
-            $result = findHashtagInString(strtolower($info[$columnname]), $string);
-            if($result !== false) 
-                return $info;
-        }
-    }
-    
-    // return it
-    return null;
 }
 
 ?>
