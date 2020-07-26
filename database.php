@@ -75,7 +75,7 @@ class DatabaseQuery {
 
     }
 
-    public function findLanguageInString($string)
+    public function findLanguageInString($string, $keywords)
     {
         $columnnames = array("Code", "Name");
         $data = $this->conn->query(
@@ -95,7 +95,8 @@ class DatabaseQuery {
             foreach($columnnames as $columnname)
             {
                 $result = findHashtagInString(
-                    strtolower($info[$columnname]), $string);
+                    strtolower($info[$columnname]), $string,
+                    $keywords);
                 if($result !== false)
                     return $info;
             }

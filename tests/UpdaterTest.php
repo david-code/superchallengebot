@@ -7,7 +7,6 @@ use SCBot\Twitter\Twitter;
 require_once 'update.php';
 require_once 'database.php';
 require_once 'twitter.php';
-require_once 'update.php';
 
 class UpdaterTest extends TestCase {
 

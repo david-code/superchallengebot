@@ -78,7 +78,7 @@ class Updater
         }
         loginfo("Processing tweet " . $tweet->id_str . " from user "
               . $tweet->user->screen_name. "\n" . $contents );
-        $tweet->information = $this->getTweetInformation($tweet);
+        $tweet->information = $this->getTweetInfo($tweet);
 
         $processed = false;
         $register = strpos($contents, "#register");
@@ -150,7 +150,7 @@ class Updater
         $contents = strtolower($tweet->text);
 
         // the language, if we have one
-        $information->language = $this->db->findLanguage($tweet);
+        $information->language = $this->findLanguage($tweet);
 
         // titles are always specified in quotes
         $information->title = findTitleInString($contents);
@@ -161,7 +161,7 @@ class Updater
 
     public function processRegistration($tweet)
     {
-        $language = $this->db->findLanguage($tweet);
+        $language = $this->findLanguage($tweet);
         if(!$language)
         {
             // no language specified!
@@ -403,11 +403,13 @@ class Updater
                 $user->description);
         }
     }
-}
 
-function findLanguage($tweet)
-{
-    return findLanguageInString(sanifyText($tweet->text));
+    function findLanguage($tweet)
+    {
+        return $this->db->findLanguageInString(
+            sanifyText($tweet->text),
+            $this->keywords);
+    }
 }
 
 ?>

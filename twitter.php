@@ -1,7 +1,7 @@
 <?php
 namespace SCBot\Twitter;
 
-require_once 'helpers';
+require_once 'helpers.php';
 require_once 'oauth/twitteroauth.php';
 
 function cmpTweetId($a, $b)
