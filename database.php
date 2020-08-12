@@ -3,6 +3,11 @@ namespace SCBot\Database;
 include_once dirname(__FILE__)."/helpers.php";
 
 require_once("configuration.php");
+require_once("preferences.php");
+
+use SCBot\Preferences\Preferences;
+use mysqli;
+use Exception;
 
 class DatabaseQuery {
 
@@ -14,7 +19,11 @@ class DatabaseQuery {
 
     public static function fromConfig($config)
     {
-        $mysqli = new mysqli($config->dbHost, $config->dbUser,
+        # we want a persistent connection
+        # see https://www.php.net/manual/en/mysqli.persistconns.php
+        # "To open a persistent connection you must prepend p: to the hostname when connecting."
+        $host = 'p:' . $config->dbHost;
+        $mysqli = new mysqli($host, $config->dbUser,
                              $config->dbPassword, $config->dbName);
         if ($mysqli->connect_errno) {
             throw new Exception($mysqli->connect_error);
@@ -27,7 +36,7 @@ class DatabaseQuery {
     {
         $data = $this->conn->query("SELECT * FROM Preferences");
         if (!$data) {
-            throw new Exception("Failed to retrieve preferences: " . $this->conn->error());
+            throw new \Exception("Failed to retrieve preferences: " . $this->conn->error());
         }
 
         $prefs = Array();
@@ -64,6 +73,21 @@ class DatabaseQuery {
         if (!$data) {
             throw new Exception("Error settings preferences: " . $this->conn->error());
         }
+    }
+
+    public function getStatistics()
+    {
+        $data = $this->conn->query(
+            "SELECT SUM(PagesRead) AS TotalPagesRead,
+                    SUM(MinutesWatched) AS TotalMinutesWatched
+                    FROM Entries"
+        );
+        if (!$data)
+        {
+            throw new Exception("Error getting statisticss: "
+                                . $this->conn->error());
+        }
+        return $this->conn->fetch_assoc($data);
     }
 
     public function findLanguageInString($string, $keywords)

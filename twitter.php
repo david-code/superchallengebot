@@ -2,7 +2,7 @@
 namespace SCBot\Twitter;
 
 require_once 'helpers.php';
-require_once 'oauth/twitteroauth.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 function cmpTweetId($a, $b)
 {

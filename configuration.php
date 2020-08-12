@@ -28,7 +28,7 @@ class Configuration
     /**
      * Load the configuration from a file
      */
-    public static function loadFromFile(string $filename) {
+    public static function loadFromFile($filename) {
         $settings = parse_ini_file($filename);
         return new Configuration(
             $settings['DB_NAME'],

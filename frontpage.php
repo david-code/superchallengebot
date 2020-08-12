@@ -1,13 +1,22 @@
 <?php
-
-// Preferences
 require_once('preferences.php');
+require_once('configuration.php');
 require_once('database.php');
+require_once('configuration.php');
+
+use SCBot\Database\DatabaseQuery;
+use SCBot\Configuration\Configuration;
+
+// setup db connection on first connection
+if (!array_key_exists("db", $GLOBALS)) {
+    $conf = Configuration::loadFromFile("bot.conf");
+    $GLOBALS['db'] = DatabaseQuery::fromConfig($conf);
+}
 
 function showUpdateTime()
 {
     // When we last updated
-    $lastupdate = getPreference("last_update");
+    $lastupdate = $db->getPreference("last_update");
     print "<p>Data current at ".date("r", $lastupdate)."<br>
         <a href='#' onclick='resetPreferences();'>Clear Local Data</a></p>";
 }
@@ -17,7 +26,7 @@ function printDaysLeft()
     $difference = mktime(0, 0, 0, 01, 01, 2016) - time();
     if ($difference < 0) { $difference = 0; }
     $daysleft = floor($difference/60/60/24);
-    
+
     print $daysleft;
 }
 
@@ -27,7 +36,7 @@ function hideGetStarted()
     if(isset($_COOKIE["langchallenge_hidegetstarted"])) {
         print "hide";
     }
-    
+
     // show it!
 }
 
@@ -35,27 +44,27 @@ $userstartype = array();
 function printParticipants()
 {
     global $preferences;
-    global $userstartype; 
+    global $userstartype;
 
     // statistics
-    $statistics = getStatistics();
-    
+    $statistics = $db->getStatistics();
+
     // return all participants, languages, and challenges
-    $data = callStoredProcedure("GetGroupedEntries(".
+    $data = $db->callStoredProcedure("GetGroupedEntries(".
         $statistics['TotalPagesRead'].",".
         $statistics['TotalMinutesWatched'].")");
 
-    
+
     $lastusername = ""; $index = 0; $subindex = 0;
     $rowcount = mysqli_num_rows($data); $rowindex = 0;
     $infos = array();
     while($info = mysqli_fetch_array($data)) {
         array_push($infos, $info);
     }
-    
+
     // first set up needed variables etc
     foreach($infos as &$info)
-    {        
+    {
         // other stuff
         $username = $info['UserName'];
         $displayname = $info['DisplayName'];
@@ -65,7 +74,7 @@ function printParticipants()
 
         $books = round($pagesread / $preferences->BOOK_PAGES);
         $films = round($minuteswatched / $preferences->FILM_MINUTES);
-        
+
         // figure out sort order
         $rowindex++;
         if($username != $lastusername)
@@ -75,23 +84,23 @@ function printParticipants()
             $lastusername = $username;
         }
         $subindex+=0.01;
-        
+
         // stars, numbers, or blank?
         $info['FilmEntry'] = getTableEntry($films, $preferences->TARGET_FILMS, "films");
         $info['BookEntry'] = getTableEntry($books, $preferences->TARGET_BOOKS, "books");
-        
+
         // calculate the star type across a number of entries
         //$userstartype[$username]->type = 0;
-        
+
         // participant formatting
         $info['UserString'] = "<span class='username'><a href=participant.php?username=".$username.">"
                       .$displayname."</a></span><br> <span class='twitter'>@<a href=http://twitter.com/".$username.">".$username."</a></span>";
         $info['CustomKey'] = " sorttable_customkey='".($info['TotalUnits']-$index-$subindex)."'";
-        
+
         // unset the reference
         unset($info);
     }
-    
+
     // print the headers
     print "<table class='sortable' id='participantstable'><tr class='merge'>
                 <th id='thparticipant'>Participant</th>
@@ -99,7 +108,7 @@ function printParticipants()
                 <th id='thwatched'>Watched</th>
                 <th id='thread'>Read</th>
                 <th id='thprogress'></th></tr>";
-    
+
     // and the table in random order!
     shuffle($infos);
     foreach($infos as $info) {
@@ -109,7 +118,7 @@ function printParticipants()
         //<div class='star $startype'></div>
         $filmstars = floor($filmentry->count / 25);
         $bookstars = floor($bookentry->count / 25);
-        
+
         $stars = "<div class='star none'></div>";
         $rank = $filmentry->count + $bookentry->count;
         $bluecount = 0;
@@ -118,13 +127,13 @@ function printParticipants()
         if($newstars != "") {
             $stars = "<div class='star filler'></div>$newstars";
         }
-       
+
         $sprint = $info['LongestSprint'];
         $streak = $info['CurrentStreak'];
-        
+
         $badges = getStreakDiv($streak, 5, 10, 20);
         $badges .= getSprintDiv($sprint);
-        
+
         print "<tr>
             <td class='show'".$info['CustomKey'].">"
             .$info['UserString']."</td>
@@ -133,7 +142,7 @@ function printParticipants()
             <td sorttable_customkey='$bookentry->count'>$bookentry->content</td>
             <td sorttable_customkey='$rank' class='stars'>$stars$badges</td></tr>";
     }
-    
+
     // the footer
     print "</table>";
 }
@@ -154,8 +163,8 @@ function getStarsHtml($count, $comparecount, $combine, &$rank, &$bluecount)
         if($i == 7 && $comparecount > 7) {$startype = 'gold'; $stars = ""; $localrank = 3000;}
         if($i == 15 && $comparecount > 15) {$startype = 'white'; $stars = ""; $localrank = 4000;}
         if($startype == 'blue') {$bluecount ++; }
-        
-        if($combine || (!$combine && $startype == 'blue')) 
+
+        if($combine || (!$combine && $startype == 'blue'))
         {
             if(($startype == 'blue' && $bluecount <= 6) ||
                 $startype != 'blue')
@@ -174,8 +183,8 @@ function getStreakDiv($count, $bronzelevel, $silverlevel, $goldlevel)
     if($count >= $bronzelevel) {$type = 'bronze';}
     if($count >= $silverlevel) {$type = 'silver';}
     if($count >= $goldlevel) {$type = 'gold';}
-    
-    return $type == "" ? "" : "<div class='badge $type streak' 
+
+    return $type == "" ? "" : "<div class='badge $type streak'
         title='Current Streak : $count consecutive weeks'></div>";
 }
 
@@ -185,9 +194,9 @@ function getSprintDiv($count)
     if($count >= 5) {$type = 'gold';}
     else if($count >= 2) {$type = 'silver';}
     else if($count >= 1) {$type = 'bronze';}
-    
+
     $s = $count == 1 ? "" : "s";
-    return $type == "" ? "" : "<div class='badge $type sprint' 
+    return $type == "" ? "" : "<div class='badge $type sprint'
         title='Activity Badge : studied $count whole book$s and film$s in the last fortnight'></div>";
 }
 
@@ -203,13 +212,13 @@ function getTableEntry($count, $target, $tail)
 function printLanguages()
 {
     $count = 0;
-    $languagedata = callStoredProcedure("GetLanguages()");    
+    $languagedata = callStoredProcedure("GetLanguages()");
     while($info = mysqli_fetch_array($languagedata))
     {
         $code = $info['Code'];
         $name = $info['Name'];
         print "<span class='languagecode'>".$code."</span>".$name."<br>";
-        
+
         // show the first three and then hide the rest
         if($count++ == 2) {
             print "<div class='hideable' id='languages'>";
