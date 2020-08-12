@@ -74,6 +74,7 @@ class Preferences
         }
         return false;
     }
+
 }
 
 ?>

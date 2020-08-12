@@ -1,67 +1,27 @@
-# -*- mode: yaml, yaml-indent-offset: 2 -*-
+# For use with development
+version: "3.8"
+services:
+  db:
+    image: maria-db:10.4
 
-# Run this task once to set everything up:
-#
-#   docker-compose run setup
-setup:
-  build: "."
-  links:
-    - "db"
-  volumes:
-    - ".:/src"
-  volumes_from:
-    - "sitedata"
-  command: "/src/dockerconfig/docker-SCbot-setup"
+    volumes:
+      - db-data:/var/lib/mysql
+      - type: bind
+        source: ./db-init
+        target: /docker-entrypoint-initdb.d
+    networks:
+      - backend
+  app:
+    build: .
+    ports:
+      - "8000:80"
+    depends_on:
+      - db
+    networks:
+      - backend
 
+networks:
+  backend:
 
-# Run this service to access a local copy of the site:
-#
-#   docker-compose up site
-site:
-  build: "."
-  links:
-    - "db"
-  volumes:
-    - ".:/src"
-#    - "./:/var/www/html"
-  volumes_from:
-    - "sitedata"
-  ports:
-    - "80:80"
-    - "3306:3306"
-
-# Stores persistent data volumes for our site container.  We need this
-# to
-# make the Mac work, because Docker on the Mac has pretty serious
-# permission problems with Docker volumes that map to the underlying
-# Mac
-# file system.
-sitedata:
-  image: "busybox"
-  command: "/bin/true"
-  # volumes:
-  #   - "/var/www/html/cache"
-  #   - "/var/www/html/files"
-  #   - "/var/www/html/store"
-  #   - "/var/www/html/images"
-
-# # This is launched automatically to provide you with a MySQL database.
-db:
-  image: "mysql:5.6"
-  environment:
-    MYSQL_ROOT_PASSWORD: root
-  volumes_from:
-    - "dbdata"
-  ports:
-    - "3306"
-
-# # Stores persistent data volumes for our db container.
-dbdata:
-  image: "busybox"
-  command: "/bin/true"
-  volumes:
-    - "/var/lib/mysql"
-
-
-crontab:
-  image: "dockerbase/cron"
+volumes:
+  db-data:

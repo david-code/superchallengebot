@@ -1,12 +1,8 @@
 <?php
 namespace SCBot\Database;
 include_once dirname(__FILE__)."/helpers.php";
-//include_once dirname(__FILE__)."/config-files/configuration.php";
 
 require_once("configuration.php");
-
-// Do we use the testing database or the release one?
-//$link = login(DB_NAME.$testing);
 
 class DatabaseQuery {
 
@@ -68,11 +64,6 @@ class DatabaseQuery {
         if (!$data) {
             throw new Exception("Error settings preferences: " . $this->conn->error());
         }
-    }
-
-    public function newUsers()
-    {
-
     }
 
     public function findLanguageInString($string, $keywords)

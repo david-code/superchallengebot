@@ -21,6 +21,7 @@ class Twitter
         $this->twit = $twit;
     }
 
+
     public static function fromCreds($consumer_key,
                                      $consumer_secret_key,
                                      $oauth_key, $oauth_secret_key)
@@ -28,6 +29,16 @@ class Twitter
         return new Twitter(
             new TwitterOAuth($consumer_key, $consumer_secret_key,
                              $oauth_key, $oauth_secret_key));
+    }
+
+
+    /**
+     * Create a client from preferences
+     */
+    public static function fromPreferences($pref)
+    {
+        return self::fromCreds($pref->CONSUMER_KEY, $pref->CONSUMER_SECRET_KEY,
+                               $pref->OAUTH_TOKEN, $pref->OAUTH_SECRET_TOKEN);
     }
 
     public function getUnprocessedTweets($lastid)

@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e
-set -u
-
-echo "===== Creating database"
-echo 'CREATE DATABASE IF NOT EXISTS phpbb;' | mysql -h db -u root -proot

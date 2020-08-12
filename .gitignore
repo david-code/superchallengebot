@@ -3,3 +3,9 @@
 composer.phar
 
 /vendor/
+
+# conf file
+bot.conf
+
+# random log file
+log.txt

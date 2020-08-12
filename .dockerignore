@@ -1,0 +1,14 @@
+# don't want to store conf in docker image
+bot.conf
+
+# Amazon thing - don't think we will use
+buildspec.yml
+
+# don't need these files in image
+*.txt
+*.md
+
+# directories that do not need to be transfered
+db-init/
+oauth/
+vendor/
