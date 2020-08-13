@@ -1,4 +1,9 @@
 <?php
+namespace SCBot\Preferences;
+
+use DateTime;
+use DateTimeZone;
+
 require_once('database.php');
 
 class Preferences
@@ -38,7 +43,7 @@ class Preferences
         $this->OAUTH_TOKEN = $oauthToken;
         $this->OAUTH_SECRET_TOKEN = $oauthSecretToken;
 
-        $this->EPOCH = new DateTime('2000-01-01');
+        $this->EPOCH = new DateTime('2000-01-01', new DateTimeZone("UTC"));
 
         $this->TARGETS = array(
             'book' => $this->BOOK_PAGES,

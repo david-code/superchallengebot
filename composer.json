@@ -3,7 +3,9 @@
   "description": "A twitter bot to check users' progress for the Super Challenge",
   "type": "project",
   "license": "MIT",
-  "require": {},
+  "require": {
+    "abraham/twitteroauth": "^1.1"
+  },
   "require-dev": {
     "phpunit/phpunit": "^9.1"
   }

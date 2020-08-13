@@ -1,23 +1,17 @@
 <?php
+include_once('prelude.php');
 require_once('preferences.php');
 require_once('configuration.php');
 require_once('database.php');
 require_once('configuration.php');
 
-use SCBot\Database\DatabaseQuery;
-use SCBot\Configuration\Configuration;
-
-// setup db connection on first connection
-if (!array_key_exists("db", $GLOBALS)) {
-    $conf = Configuration::loadFromFile("bot.conf");
-    $GLOBALS['db'] = DatabaseQuery::fromConfig($conf);
-}
 
 function showUpdateTime()
 {
     // When we last updated
+    global $db;
     $lastupdate = $db->getPreference("last_update");
-    print "<p>Data current at ".date("r", $lastupdate)."<br>
+    print "<p>Data current at ". date("r", $lastupdate)."<br>
         <a href='#' onclick='resetPreferences();'>Clear Local Data</a></p>";
 }
 
@@ -45,6 +39,7 @@ function printParticipants()
 {
     global $preferences;
     global $userstartype;
+    global $db;
 
     // statistics
     $statistics = $db->getStatistics();
@@ -211,8 +206,10 @@ function getTableEntry($count, $target, $tail)
 
 function printLanguages()
 {
+    global $db;
+
     $count = 0;
-    $languagedata = callStoredProcedure("GetLanguages()");
+    $languagedata = $db->callStoredProcedure("GetLanguages()");
     while($info = mysqli_fetch_array($languagedata))
     {
         $code = $info['Code'];

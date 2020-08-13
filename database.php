@@ -53,7 +53,7 @@ class DatabaseQuery {
                                $prefs['oauth_secret_token']);;
     }
 
-    public function getPreference()
+    public function getPreference($name)
     {
         $data = $this->conn->query("SELECT Value FROM Preferences " .
                                    "WHERE Name = '".$name."'");
@@ -87,7 +87,7 @@ class DatabaseQuery {
             throw new Exception("Error getting statisticss: "
                                 . $this->conn->error());
         }
-        return $this->conn->fetch_assoc($data);
+        return $data->fetch_assoc();
     }
 
     public function findLanguageInString($string, $keywords)
@@ -392,12 +392,12 @@ class DatabaseQuery {
                 . $this->conn->error()
             );
         }
-        $data = $resultset->store_result($link);
+        $data = $this->conn->store_result();
 
         // clear remaining sets in the resultset before returning
         while ($this->conn->more_results())
         {
-            $this->conn->next_result($link);
+            $this->conn->next_result();
         }
         return $data;
     }
@@ -424,7 +424,7 @@ class DatabaseQuery {
 
     function safe($string)
     {
-        return $this->conn->real_escape_string($link, strip_tags($string));
+        return $this->conn->real_escape_string(strip_tags($string));
     }
 
 

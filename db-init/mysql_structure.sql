@@ -10,10 +10,10 @@ SET time_zone = "+00:00";
 
 
 -- Use these commands to create the DB/
--- 
-DROP DATABASE languagechallenge;
-CREATE DATABASE languagechallenge;
-use languagechallenge;
+--
+---DROP DATABASE languagechallenge;
+---CREATE DATABASE languagechallenge;
+--use languagechallenge;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -119,7 +119,7 @@ BEGIN
 -- DROP PROCEDURE `GetChallenges`$$
 CREATE PROCEDURE `GetChallenges`()
 BEGIN
-        SELECT * FROM Challenge 
+        SELECT * FROM Challenge
         ORDER BY GroupCode, VariationName;
         END$$
 
@@ -135,12 +135,12 @@ BEGIN
 -- DROP PROCEDURE `GetGroupedEntries`$$
 CREATE PROCEDURE `GetGroupedEntries`(IN TotalBookPages INT, IN TotalFilmMinutes INT)
 BEGIN
-        SELECT Participants.DisplayName AS DisplayName, 
+        SELECT Participants.DisplayName AS DisplayName,
             Language.Name AS LanguageName, Entries.MinutesWatched AS MinutesWatched, Entries.PagesRead AS PagesRead,
             Entries.LongestStreak AS LongestStreak, Entries.CurrentStreak AS CurrentStreak,
             Entries.LongestSprint AS LongestSprint,
             EntryGroups.UserName AS UserName, EntryGroups.TotalUnits AS TotalUnits
-        FROM Participants, Entries, Language, 
+        FROM Participants, Entries, Language,
            (SELECT Entries.UserName AS UserName,
                MAX(PagesRead/TotalBookPages+MinutesWatched/TotalFilmMinutes) AS TotalUnits
             FROM Entries
@@ -162,9 +162,9 @@ BEGIN
 -- DROP PROCEDURE `GetParticipantDetails`$$
 CREATE PROCEDURE `GetParticipantDetails`(IN InUserName VARCHAR(255))
 BEGIN
-        SELECT UserName, DisplayName, Location, 
-        ImageUrl, WebsiteUrl, About 
-    FROM Participants 
+        SELECT UserName, DisplayName, Location,
+        ImageUrl, WebsiteUrl, About
+    FROM Participants
     WHERE Participants.UserName = InUserName;
         END$$
 
@@ -184,7 +184,7 @@ BEGIN
 -- DROP PROCEDURE `GetStatistics`$$
 CREATE PROCEDURE `GetStatistics`()
 BEGIN
-        SELECT SUM(PagesRead) AS TotalPagesRead, SUM(MinutesWatched) AS TotalMinutesWatched 
+        SELECT SUM(PagesRead) AS TotalPagesRead, SUM(MinutesWatched) AS TotalMinutesWatched
             FROM Entries;
         END$$
 
@@ -202,13 +202,13 @@ INSERT INTO Participants VALUES (
 'http://dummy.user.com','about me');
 
 
-INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak) 
+INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak)
 VALUES ('dummy','af', 0,0,0,0,0 );
 
-INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak) 
+INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak)
 VALUES ('dummy','fr', 0,0,0,0,0 );
 
-INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak) 
+INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak)
 VALUES ('dummy','egy', 0,0,0,0,0 );
 
 
@@ -330,13 +330,13 @@ INSERT INTO Language (Name, Code) VALUES ('Moldavian','mo');
 INSERT INTO Language (Name, Code) VALUES ('Mongolian','mn');
 INSERT INTO Language (Name, Code) VALUES ('Nauru','na');
 INSERT INTO Language (Name, Code) VALUES ('Nepali','ne');
-INSERT INTO Language (Name, Code) VALUES ('Norwegian','no');
+--INSERT INTO Language (Name, Code) VALUES ('Norwegian','no');
 INSERT INTO Language (Name, Code) VALUES ('Occitan','oc');
 INSERT INTO Language (Name, Code) VALUES ('Oriya','or');
 INSERT INTO Language (Name, Code) VALUES ('Pashto (Pushto)','ps');
-INSERT INTO Language (Name, Code) VALUES ('Polish','pl');
-INSERT INTO Language (Name, Code) VALUES ('Portuguese','pt');
-INSERT INTO Language (Name, Code) VALUES ('Punjabi','pa');
+--INSERT INTO Language (Name, Code) VALUES ('Polish','pl');
+--INSERT INTO Language (Name, Code) VALUES ('Portuguese','pt');
+--INSERT INTO Language (Name, Code) VALUES ('Punjabi','pa');
 INSERT INTO Language (Name, Code) VALUES ('Quechua','qu');
 INSERT INTO Language (Name, Code) VALUES ('Rhaeto-Romance','rm');
 INSERT INTO Language (Name, Code) VALUES ('Samoan','sm');
@@ -358,7 +358,7 @@ INSERT INTO Language (Name, Code) VALUES ('Sundanese','su');
 INSERT INTO Language (Name, Code) VALUES ('Swahili','sw');
 INSERT INTO Language (Name, Code) VALUES ('Tagalog','tl');
 INSERT INTO Language (Name, Code) VALUES ('Tajik','tg');
-INSERT INTO Language (Name, Code) VALUES ('Tamil','ta');
+--INSERT INTO Language (Name, Code) VALUES ('Tamil','ta');
 INSERT INTO Language (Name, Code) VALUES ('Tatar','tt');
 INSERT INTO Language (Name, Code) VALUES ('Telugu','te');
 INSERT INTO Language (Name, Code) VALUES ('Tibetan','bo');
@@ -387,4 +387,3 @@ INSERT INTO Language (Name, Code) VALUES ('Family-Semitic','sem');
 INSERT INTO Language (Name, Code) VALUES ('Family-Turkic','trk');
 INSERT INTO Language (Name, Code) VALUES ('Family-Greek','grk');
 INSERT INTO Language (Name, Code) VALUES ('Family-North-Germanic','gmq');
-

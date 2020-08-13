@@ -1,7 +1,6 @@
 <?php
 
-require_once('database.php');
-require_once('preferences.php');
+include_once('prelude.php');
 
 getParticipantData();
 
@@ -19,14 +18,14 @@ getParticipantData();
     <script src="script/raphael-min.js"></script>
     <script src="script/morris.min.js"></script>
     <script src="script/participant.js"></script>
-    
+
     <div id='background'>
         <div class='centered'>
             <div class='left'></div>
             <div class='right'></div>
         </div>
     </div>
-    
+
     <div id='headerback'>
         <div id='header'>
             <?php printHeaderLine(); ?>
@@ -35,13 +34,13 @@ getParticipantData();
     </div>
 
     <div id='main'>
-    
+
     <div class='shortdesc'>
         <?php printInfoLine(); ?>
     </div>
 
     <?php printLanguageSections() ?>
-        
+
     </div>
 
 <?php
@@ -49,10 +48,11 @@ getParticipantData();
 function getParticipantData()
 {
     global $participant;
-    $username = safe($_GET['username']);
+    global $db;
+    $username = $db->safe($_GET['username']);
 
     // participant information
-    $participantdata = callStoredProcedure("GetParticipantDetails('".$username."')");
+    $participantdata = $db->callStoredProcedure("GetParticipantDetails('".$username."')");
     $participant = mysqli_fetch_array($participantdata);
 }
 
@@ -77,10 +77,11 @@ function printLanguageSections()
 {
     // challenge information
     global $participant;
-    $entrydata = callStoredProcedure("GetParticipantEntries('".$participant['UserName']."')");
+    global $db;
+    $entrydata = $db->callStoredProcedure("GetParticipantEntries('".$participant['UserName']."')");
     while($entry = mysqli_fetch_array($entrydata))
     {
-        printLanguageSection($entry);                
+        printLanguageSection($entry);
     }
 }
 
@@ -89,20 +90,20 @@ function printLanguageSection($entry)
     global $preferences;
     $books = round($entry['PagesRead'] / $preferences->BOOK_PAGES, 1);
     $films = round($entry['MinutesWatched'] / $preferences->FILM_MINUTES, 1);
-    
+
     $languagename = $entry['LanguageName'];
     $languagecode = $entry['LanguageCode'];
     $entryid = $entry['EntryId'];
-    
+
     // get data for the rows
     $bookactions = getActionData($entryid, "inc_pagesread", $preferences->BOOK_PAGES, "pages", "Unknown");
     $filmactions = getActionData($entryid, "inc_minuteswatched", $preferences->FILM_MINUTES, "minutes", "Unknown");
-    
+
     // calculate and update database with badge data!
     $times = array_merge($bookactions['Times'], $filmactions['Times']); sort($times);
     $sprint = getSprintData($bookactions, $filmactions);
     $streak = getStreakData($times);
-    
+
     if($streak['Longest'] != $entry['LongestStreak'] ||
        $streak['Current'] != $entry['CurrentStreak'] ||
        $sprint != $entry['LongestSprint']) {
@@ -111,12 +112,12 @@ function printLanguageSection($entry)
 
     // semi-html stuff
     $streaktick = $streak['Active'] ? 'tick' : '';
-    $streakhtml = ($streak['Current'] > 1 ? "<div class='badge white streak $streaktick' 
+    $streakhtml = ($streak['Current'] > 1 ? "<div class='badge white streak $streaktick'
         title='Current Streak (number of consecutive weeks)'></div> ".$streak['Current']." weeks" : "");
-    
-    $sprinthtml = ($sprint > 0 ? "<div class='badge white sprint' 
+
+    $sprinthtml = ($sprint > 0 ? "<div class='badge white sprint'
         title='Activity Badge (recently studied at least one book and one film)'></div> active" : "");
-    
+
     $bookkey = $languagecode."books";
     /* $bookshtml = "Read $books book".($books==1?"":"s"). */
     /*         getRateHtml($books).getDisplayButtonsHtml($bookkey); */
@@ -129,13 +130,13 @@ function printLanguageSection($entry)
     $filmshtml = "Watched $films film".($films==1?"":"s").
             getRateHtml($films).getDisplayButtonsHtml($filmkey).
       "(at this rate you'll finish with " . getValueAtEnd($films) . " film".($films==1?")":"s)");
-    
+
     $booksectionhtml = getSectionHtml($bookactions, $bookkey, 'Total Read');
     $filmsectionhtml = getSectionHtml($filmactions, $filmkey, 'Total Watched');
     // $mtest = getBooksAtEnd ($books);
 
     //$sprinthtml<span class='spacer'></span>
-    
+
     // finally, print everything
     print "
         <div class='panel'>
@@ -145,22 +146,22 @@ function printLanguageSection($entry)
             <div class='headerbadges'>$streakhtml $sprinthtml</div>
         </div>
 
-       
+
 
        <div class='subheader'>
-            $bookshtml 
+            $bookshtml
         </div>
         <div class='content'>
             $booksectionhtml
         </div>
-    
+
         <div class='subheader'>
             $filmshtml
         </div>
         <div class='content'>
             $filmsectionhtml
        </div>
-    
+
         </div>
     ";
 }
@@ -182,10 +183,10 @@ function getSectionHtml($actiondata, $key, $valuetitle)
         <div id='$key"."list' class='hideable list'>".$actiondata['List']."</div>
         <div id='$key"."graph' class='hideable graph'></div>
         <script type='text/javascript'>
-            participant.data['$key'] = [" . $actiondata['Graph'] . "]; 
+            participant.data['$key'] = [" . $actiondata['Graph'] . "];
             participant.postUnits['$key'] = [' ".$actiondata['Type']."'];
             participant.labels['$key'] = ['$valuetitle'];
-        
+
             setGraphVisibility('$key', ".($actiondata['Count'] > 3 ? 'true' : 'false').");
         </script>";
 }
@@ -199,14 +200,15 @@ function getRateHtml($number)
 
 function getActionData($entryid, $actioncode, $defaultamount, $typestring, $defaulttitle = "")
 {
+    global $db;
     // query the database for matching actions
-    $actiondata = callStoredProcedure("GetEntryActions(".$entryid.", '".$actioncode."')");
-    
+    $actiondata = $db->callStoredProcedure("GetEntryActions(".$entryid.", '".$actioncode."')");
+
     // for streaks and sprints
     $times = array();
-    
+
     // print them out in a readable format
-    $liststring = ""; $graphstring = ""; 
+    $liststring = ""; $graphstring = "";
     $totalamount = 0; $count = 0;
     $sprintamount = 0;
     $lasttime = null;
@@ -214,7 +216,7 @@ function getActionData($entryid, $actioncode, $defaultamount, $typestring, $defa
     while($action = mysqli_fetch_array($actiondata))
     {
         $count++;
-        
+
         // HTML list stuff
         $datestring = date("d M Y", strtotime($action['Time']));
         $titlestring = ($action['TextData'] ? "<b>".$action['TextData']."</b>" : "<i>".$defaulttitle."</i>");
@@ -225,20 +227,20 @@ function getActionData($entryid, $actioncode, $defaultamount, $typestring, $defa
         $liststring .= "<span class='listdate'>$datestring</span>
                         <span class='listtitle'>$titlestring</span>
                         <span class='listamount'>$amountstring</span><br>";
-        
+
         // streaks and sprints
         array_push($times, $action['Time']);
-        
+
         // JAVASCRIPT graph stuff
         $thistime = strtotime($action['Time']); // if two entries have exactly the same time, bump one up/make it later
         $time = date("c", $lasttime == null || $lasttime != $thistime ? $thistime : ++$thistime);
         $lasttime = $thistime;
-        
+
         $amount = $action['AmountData'];
         $title = $action['TextData'] ? $action['TextData'] : $defaulttitle;
 
         $graphstring .= "{'time': '$time', 'amount': $amount, 'title': \"$title\"},";
-        
+
         // activity during the last fortnight
         $datetime = new DateTime($action['Time']);
         if($datetime->diff($currenttime)->days <= 14) {
@@ -246,7 +248,7 @@ function getActionData($entryid, $actioncode, $defaultamount, $typestring, $defa
         }
     }
     $graphstring = substr_replace($graphstring, "", -1);
-    
+
     // redefine action data and set the different parts
     $actiondata = array();
     $actiondata['List'] = $liststring;
@@ -261,12 +263,12 @@ function getActionData($entryid, $actioncode, $defaultamount, $typestring, $defa
 function getSprintData($bookactions, $filmactions)
 {
     global $preferences;
-    
+
     // how many books/films have we studied in the last fortnight?
     $sprint = 0;
     $bookunits = $bookactions['Sprint'] / $preferences->BOOK_PAGES;
     $filmunits = $filmactions['Sprint'] / $preferences->FILM_MINUTES;
-    
+
     return min(floor($bookunits), floor($filmunits));
 }
 
@@ -274,13 +276,13 @@ function getStreakData($times)
 {
 
    global $preferences;
-    
+
     // streaks and sprints
     $longeststreak = 0;
     $currentstreak = 0;
     $active = false;
     $laststreakelapsed = 0;
-    
+
     // streaks and sprints
     $elapsedweeks = 0;
     foreach($times as $time)
@@ -305,7 +307,7 @@ function getStreakData($times)
         }
 
     }
-    
+
     // the streak is only current if the last entry was within a week
     $sinceepoch = floor($preferences->EPOCH->diff(new DateTime())->days / 7);
     if($sinceepoch - $elapsedweeks > 0)
@@ -315,12 +317,12 @@ function getStreakData($times)
     if($sinceepoch - $elapsedweeks > 1) {
         $currentstreak = 0;
     }
-    
+
     $streak = array();
     $streak['Longest'] = $longeststreak;
     $streak['Current'] = $currentstreak;
     $streak['Active'] = $active; // have we update this week?
-    return $streak; 
+    return $streak;
 }
 
 function getValueAtEnd ($value)

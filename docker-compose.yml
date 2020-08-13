@@ -2,8 +2,12 @@
 version: "3.8"
 services:
   db:
-    image: maria-db:10.4
-
+    image: mariadb:10.4
+    environment:
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: languagechallenge
+      MYSQL_ROOT_PASSWORD:
     volumes:
       - db-data:/var/lib/mysql
       - type: bind
@@ -19,6 +23,10 @@ services:
       - db
     networks:
       - backend
+    volumes:
+      - type: bind
+        source: .
+        target: /var/www/html
 
 networks:
   backend:
