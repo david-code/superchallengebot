@@ -1,9 +1,9 @@
-FROM php:5.4-apache
+FROM php:7-apache
 
 RUN apt-get update && \
-    apt-get install -y php5-mysqlnd git zlib1g-dev imagemagick libjpeg-dev libpng-dev \
-        mysql-client && \
-docker-php-ext-install zip mysql mysqli gd
+    apt-get install -y git zlib1g-dev imagemagick libjpeg-dev libpng-dev \
+        mariadb-client libzip-dev && \
+docker-php-ext-install zip mysqli gd
 
 COPY ./ /var/www/html/
 

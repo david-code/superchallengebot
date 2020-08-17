@@ -277,10 +277,10 @@ class DatabaseQuery {
         }
 
         $namearray = array();
-        while($namerow = $this->conn->fetch_assoc($namesresult))
+        while($namerow = $namesresult->fetch_assoc())
             $namearray[] = $namerow['UserName'];
 
-        // how many rows, if we need to wrap
+        // how many rows, see if we need to wrap
         $countresult = $this->conn->query(
             "SELECT COUNT(*) FROM Participants");
 
@@ -291,13 +291,13 @@ class DatabaseQuery {
             );
         }
 
-        $totalcount = $this->conn->fetch_array($countresult);
+        $totalcount = $countresult->fetch_array();
         $lastindex += $count;
         if($lastindex >= $totalcount[0])
             $lastindex = 0;
 
         // Save the last updated index (wrapping if necessary)
-        $this->setPreference("last_userupdate_index", $latindex);
+        $this->setPreference("last_userupdate_index", $lastindex);
 
         return $namearray;
     }
@@ -406,12 +406,12 @@ class DatabaseQuery {
                                $imageurl, $websiteurl, $about)
     {
        $result = $this->conn->query("UPDATE Participants
-        SET DisplayName='".safe($displayname)."',
-            Location='".safe($location)."',
-            ImageUrl='".safe($imageurl)."',
-            WebsiteUrl='".safe($websiteurl)."',
-            About='".safe($about)."'
-        WHERE UserName='".$username."'");
+        SET DisplayName='" . $this->safe($displayname)."',
+            Location='". $this->safe($location)."',
+            ImageUrl='". $this->safe($imageurl)."',
+            WebsiteUrl='". $this->safe($websiteurl)."',
+            About='". $this->safe($about)."'
+        WHERE UserName='". $this->safe($username)."'");
 
        if (!$result)
        {

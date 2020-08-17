@@ -43,7 +43,7 @@ class Twitter
                                $pref->OAUTH_TOKEN, $pref->OAUTH_SECRET_TOKEN);
     }
 
-    public function getUnprocessedTweets($lastid)
+    public function getUnprocessedTweets($lastreadid)
     {
         $args = Array();
         if ($lastreadid)
@@ -51,7 +51,7 @@ class Twitter
         $tweets = $this->twit->get('statuses/mentions_timeline',
                                    $args);
 
-        uasort($tweets, 'cmpTweetId');
+        uasort($tweets, 'SCBot\Twitter\cmpTweetId');
         return $tweets;
     }
 
@@ -85,7 +85,7 @@ class Twitter
                 // don't want to let us follow them. But on the other hand, there's no
                 // point following the language bot and not letting it follow you (ie, it
                 // won't see your messages).
-                loginfo("Now following ".$friendship->screen_name);
+                loginfo("Now following ". $friendship->screen_name);
                 $this->twit->post('friendships/create', array('user_id' => $friendship->id_str));
             }
         }

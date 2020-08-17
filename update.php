@@ -14,12 +14,12 @@ class Updater
     protected $twit;
 
     public function __construct($db, $prefs,
-                                $testing, $twit)
+                                $twit, $testing)
     {
         $this->db = $db;
         $this->prefs = $prefs;
-        $this->testing = $testing;
         $this->twit = $twit;
+        $this->testing = $testing;
     }
 
     /**
@@ -28,15 +28,27 @@ class Updater
     public function update()
     {
         $lastupdate = $this->db->getPreference('last_update');
-        if (!$testing && lastupdate > strtotime('1 minute ago'))
+        if (!$this->testing && $lastupdate > strtotime('1 minute ago'))
         {
             loginfo('update() called but not run');
             return;
         }
-        // logic for new users
+        // update followers
         $this->twit->updateTwitterFollowing();
-        $newUsers = $this->twit->newUsers();
-        $this->db->updateParticipants($newUsers);
+
+        // update user info
+        $updateNames = $this->db->getUpdateNames();
+        $usersToUpdate = $this->twit->getTwitterUsers($updateNames);
+        echo count($usersToUpdate);
+        foreach($usersToUpdate as $user)
+        {
+            $this->db->updateParticipant($user->screen_name,
+                                         $user->name,
+                                         $user->location,
+                                         $user->profile_image_url,
+                                         $user->url,
+                                         $user->description);
+        }
 
         // logic for scores
         $success = $this->updateScores();
