@@ -10,16 +10,16 @@ use SCBot\Database\DatabaseQuery;
 use SCBot\Twitter\Twitter;
 use SCBot\Update\Updater;
 
-$config = Configuration::loadFromFile('bot.conf');
-
 try {
-   $db = DatabaseQuery::fromConfig($config);
-   $pref = $db->getPreferences();
-   $twit = Twitter::fromPreferences($pref);
-   $updater = new Updater($db, $pref, $twit, getenv('SCBOT_TESTING', true));
-   $updater->update();
+    $testing = getenv('SCBOT_TESTING', true);
+    $config = Configuration::loadFromFile('bot.conf');
+    $db = DatabaseQuery::fromConfig($config);
+    $pref = $db->getPreferences();
+    $twit = Twitter::fromPreferences($pref, $testing);
+    $updater = new Updater($db, $pref, $twit, $testing);
+    $updater->update();
 } catch (Exception $e) {
-   die($e->message);
+    die($e->getMessage());
 }
 
 ?>

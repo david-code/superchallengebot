@@ -1,5 +1,7 @@
 <?php
 
+require_once('logging.php');
+
 // strpos that takes an array of values to match against a string
 // note the argument order (to match strpos)
 function strposa($haystack, $needle) {
@@ -141,15 +143,9 @@ function findAmountInString($string, $type)
 }
 
 function loginfo($message) {
-    $file = 'log.txt';
+    global $logger;
 
-    // prepend the date to the message
-    $message = date("r", time())."\n".$message."\n\n";
-
-    // Write the contents to the file,
-    // using the FILE_APPEND flag to append the content to the end of the file
-    // and the LOCK_EX flag to prevent anyone else writing to the file at the same time
-    file_put_contents($file, $message, FILE_APPEND | LOCK_EX);
+    $logger->info($message);
 }
 
 ?>

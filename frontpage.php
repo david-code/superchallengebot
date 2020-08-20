@@ -3,7 +3,6 @@ include_once('prelude.php');
 require_once('preferences.php');
 require_once('configuration.php');
 require_once('database.php');
-require_once('configuration.php');
 
 
 function showUpdateTime()

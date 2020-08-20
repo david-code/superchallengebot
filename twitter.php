@@ -18,29 +18,30 @@ class Twitter
 {
     protected $twit;
 
-    public function __construct($twit)
+    public function __construct($twit, $testing)
     {
         $this->twit = $twit;
+        $this->testing = $testing;
     }
 
 
     public static function fromCreds($consumer_key,
                                      $consumer_secret_key,
-                                     $oauth_key, $oauth_secret_key)
+                                     $oauth_key, $oauth_secret_key, $testing)
     {
         return new Twitter(
             new TwitterOAuth($consumer_key, $consumer_secret_key,
-                             $oauth_key, $oauth_secret_key));
+                             $oauth_key, $oauth_secret_key), $testing);
     }
 
 
     /**
      * Create a client from preferences
      */
-    public static function fromPreferences($pref)
+    public static function fromPreferences($pref, $testing = false)
     {
         return self::fromCreds($pref->CONSUMER_KEY, $pref->CONSUMER_SECRET_KEY,
-                               $pref->OAUTH_TOKEN, $pref->OAUTH_SECRET_TOKEN);
+                               $pref->OAUTH_TOKEN, $pref->OAUTH_SECRET_TOKEN, $testing);
     }
 
     public function getUnprocessedTweets($lastreadid)
@@ -93,6 +94,9 @@ class Twitter
 
     public function getTwitterUsers($updateNames)
     {
+        if (count($updateNames) == 0) {
+            return [];
+        }
         $args = array();
         $args['screen_name'] = implode(", ", $updateNames);
         return $this->twit->get('users/lookup', $args);
@@ -104,9 +108,9 @@ class Twitter
         $message = "@".$tweet->user->screen_name." ".$message;
         $replytoid = $tweet->id_str;
 
-        loginfo("Replied to ".$replytoid." with ".$message.$testing);
-        if(!$testing)
-            $twit->post('statuses/update',
+        loginfo("Replied to ".$replytoid." with ".$message.$this->testing);
+        if(!$this->testing)
+            $this->twit->post('statuses/update',
                         array('status' => $message,
                               'in_reply_to_status_id' => $replytoid));
     }

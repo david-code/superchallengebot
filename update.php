@@ -5,6 +5,7 @@ namespace SCBot\Update;
 require_once('database.php');
 require_once('preferences.php');
 require_once('helpers.php');
+require_once('logging.php');
 
 class Updater
 {
@@ -27,6 +28,8 @@ class Updater
      */
     public function update()
     {
+        global $logger;
+        $logger->info("Updating");
         $lastupdate = $this->db->getPreference('last_update');
         if (!$this->testing && $lastupdate > strtotime('1 minute ago'))
         {
@@ -39,7 +42,6 @@ class Updater
         // update user info
         $updateNames = $this->db->getUpdateNames();
         $usersToUpdate = $this->twit->getTwitterUsers($updateNames);
-        echo count($usersToUpdate);
         foreach($usersToUpdate as $user)
         {
             $this->db->updateParticipant($user->screen_name,
@@ -71,7 +73,7 @@ class Updater
 
         foreach ($tweets as $tweet)
         {
-            $lastreadid = processTweet($tweet);
+            $lastreadid = $this->processTweet($tweet);
         }
 
         $this->db->setPreference('last_twitter_id', $lastreadid);
@@ -142,7 +144,7 @@ class Updater
     public function getTweetInfo($tweet)
     {
         $contents = strtolower($tweet->text);
-        $information = new stdClass();
+        $information = new \stdClass();
 
         // first get the type
         $information->contenttype =
@@ -192,7 +194,7 @@ class Updater
             if(!$success) {
                 $message = "You're already studying ".$language['Name']."!";
             } else {
-                $message = "has registered for the Super Challenge in "
+                $message = " has registered for the Super Challenge in "
                           .$language['Name'].". Good luck!";
             }
 
@@ -229,10 +231,10 @@ class Updater
             0, $tweet->in_reply_to_status_id_str);
 
         // and roll back the data
-        $type = $preferences->CONTENTTYPE[
+        $type = $this->prefs->CONTENTTYPE[
             substr($targetaction['ActionCode'], 4)
         ];
-        $entrycontent = $preferences->ENTRYCONTENT[$type];
+        $entrycontent = $this->prefs->ENTRYCONTENT[$type];
         $entryid = $targetaction['EntryId'];
         $targetactionamount = $targetaction['AmountData'];
         $this->db->incrementEntryRecord(
@@ -247,7 +249,6 @@ class Updater
 
     function processEdit($tweet)
     {
-        global $preferences;
 
         // the action code must not be 'del' or 'edt' (ie, we can't have
         // already undone this action.
@@ -269,7 +270,7 @@ class Updater
         $editinformation = $tweet->information;
         if(!$editinformation->contenttype) {
             $actiontag = substr($targetaction['ActionCode'], 4);
-            $editinformation->contenttype = $preferences->CONTENTTYPE[$actiontag];
+            $editinformation->contenttype = $this->prefs->CONTENTTYPE[$actiontag];
             $this->updateTweetInformation($tweet, $editinformation);
         }
 
@@ -308,7 +309,7 @@ class Updater
         $edittype = $this->prefs->CONTENTTYPE[substr($editaction['ActionCode'], 4)];
         $this->db->incrementEntryRecord(
             $editaction['EntryId'],
-            $this->preferences->ENTRYCONTENT[$edittype],
+            $this->prefs->ENTRYCONTENT[$edittype],
             $editaction['AmountData']);
 
         // roll back the previous data
@@ -367,8 +368,10 @@ class Updater
                       : "").".";
 
         // increment the content in the database
-        $this->db->insertActionRecord($tweet->id_str, $preferences->ACTIONS[$type], $tweet->entryid, $amount, $title);
-        $this->db->incrementEntryRecord($tweet->entryid, $preferences->ENTRYCONTENT[$type], $amount); // can be used to return the total amount
+        $this->db->insertActionRecord($tweet->id_str, $this->prefs->ACTIONS[$type],
+                                      $tweet->entryid, $amount, $title);
+        $this->db->incrementEntryRecord($tweet->entryid,
+                                        $this->prefs->ENTRYCONTENT[$type], $amount); // can be used to return the total amount
 
         // say something nice to the person
         $this->twit->replyTweet($tweet, $replystring);
@@ -420,7 +423,7 @@ class Updater
     {
         return $this->db->findLanguageInString(
             sanifyText($tweet->text),
-            $this->keywords);
+            $this->prefs->KEYWORDS);
     }
 }
 

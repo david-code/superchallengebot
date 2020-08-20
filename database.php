@@ -36,7 +36,7 @@ class DatabaseQuery {
     {
         $data = $this->conn->query("SELECT * FROM Preferences");
         if (!$data) {
-            throw new \Exception("Failed to retrieve preferences: " . $this->conn->error());
+            throw new \Exception("Failed to retrieve preferences: " . $this->conn->error);
         }
 
         $prefs = Array();
@@ -58,7 +58,7 @@ class DatabaseQuery {
         $data = $this->conn->query("SELECT Value FROM Preferences " .
                                    "WHERE Name = '".$name."'");
         if (!$data) {
-            throw new Exception("Error retrieving preference: " . $this->conn->error());
+            throw new Exception("Error retrieving preference: " . $this->conn->error);
         }
 
         $info = $data->fetch_assoc();
@@ -71,7 +71,7 @@ class DatabaseQuery {
         VALUES ('".$name."', '".$value."')
         ON DUPLICATE KEY UPDATE Value = '".$value."'");
         if (!$data) {
-            throw new Exception("Error settings preferences: " . $this->conn->error());
+            throw new Exception("Error settings preferences: " . $this->conn->error);
         }
     }
 
@@ -85,7 +85,7 @@ class DatabaseQuery {
         if (!$data)
         {
             throw new Exception("Error getting statisticss: "
-                                . $this->conn->error());
+                                . $this->conn->error);
         }
         return $data->fetch_assoc();
     }
@@ -100,11 +100,11 @@ class DatabaseQuery {
         if (!$data)
         {
             throw new Exception("Error querying language: "
-                              . $this->conn->error());
+                              . $this->conn->error);
         }
 
         // check against all languages in the database
-        while($info = $this->conn->fetch_assoc($data))
+        while($info = $data->fetch_assoc())
         {
             // check against all specified columns
             foreach($columnnames as $columnname)
@@ -135,7 +135,7 @@ class DatabaseQuery {
         {
             throw new Exception("Failure inserting participant "
                               . $username . ": "
-                              . $this->conn->error());
+                              . $this->conn->error);
         }
     }
 
@@ -146,14 +146,14 @@ class DatabaseQuery {
         // Check for double entries
         $query = "SELECT UserName, LanguageCode FROM Entries "
                . "WHERE UserName='". $this->safe($username)
-              .  "' AND LanguageCode='".safe($languagecode)."'";
-        $result = $this->db->query($link, $query);
+              .  "' AND LanguageCode='". $this->safe($languagecode)."'";
+        $result = $this->conn->query($query);
 
         if (!$result)
         {
             throw new Exception("Failure inserting entry " .
                                 $username . "," . $languagecode
-                                . "): " . $this->conn->error());
+                                . "): " . $this->conn->error);
         }
 
         if ($result->num_rows)
@@ -174,7 +174,7 @@ class DatabaseQuery {
             {
                 throw new Exception("Failure inserting entry " .
                                     $username . "," . $languagecode .
-                                    "): " . $this->conn->error());
+                                    "): " . $this->conn->error);
             }
             return true;
 
@@ -189,7 +189,7 @@ class DatabaseQuery {
         if (!$data) {
             throw new Exception("Failure getting action "
                                 . $actionid . ": "
-                                . $this->conn->error());
+                                . $this->conn->error);
         }
 
         return $data->fetch_assoc();
@@ -212,7 +212,7 @@ class DatabaseQuery {
         if (!$data) {
             throw new Exception(
                 "Error inserting action record: $actionid"
-                . $this->conn->error());
+                . $this->conn->error);
         }
     }
 
@@ -228,17 +228,17 @@ class DatabaseQuery {
         {
             throw new Exception(
                 "Error updating entry while incrementing $id: "
-                . $this->conn->error());
+                . $this->conn->error);
         }
 
         // return the new value
-        $result = $this->db->conn(
+        $result = $this->conn->query(
             "SELECT ".$fieldname.
             " FROM Entries WHERE Id=".$id);
         if (!$result) {
             throw new Exception(
                 "Error accessing updated entry while incrementing $id: "
-                . $this->conn->error());
+                . $this->conn->error);
         }
 
         $info = $result->fetch_assoc();
@@ -255,7 +255,7 @@ class DatabaseQuery {
         {
             throw new Exception(
                 "Error deleting entry $id: "
-                . $this->conn->error());
+                . $this->conn->error);
         }
     }
 
@@ -272,7 +272,7 @@ class DatabaseQuery {
         {
             throw new Exception(
                 "Error getting last user update index: "
-                . $this->conn->error()
+                . $this->conn->error
             );
         }
 
@@ -316,7 +316,7 @@ class DatabaseQuery {
         if (!$result) {
             throw new Exception(
                 "Error updating action $actionid with $newprefix: "
-                . $this->conn->error());
+                . $this->conn->error);
         }
 
         // we should always affect 1 row
@@ -331,7 +331,7 @@ class DatabaseQuery {
         {
             throw new Exception(
                 "Failing getting action entry id for $actionid: "
-                . $this->conn->error());
+                . $this->conn->error);
         }
 
         $info = $data->fetch_array();
@@ -343,21 +343,21 @@ class DatabaseQuery {
         // only filter by language if one is provided
         $result = $this->conn->query(
             "SELECT Id FROM Entries "
-            . "WHERE UserName = '".safe($username)."' ".
+            . "WHERE UserName = '". $this->safe($username)."' ".
             ($languagecode == "" ? "" :
-             "AND LanguageCode = '".safe($languagecode)."'"));
+             "AND LanguageCode = '". $this->safe($languagecode)."'"));
         if (!$result)
         {
             throw new Exception(
                 "Failed to get unique entry for $username "
-                . $this->conn->error()
+                . $this->conn->error
             );
         }
 
         // no data, or too much data
-        if($this->conn->num_rows($result) < 1)
+        if($result->num_rows < 1)
             return -1;
-        else if($this->conn->num_rows($result) > 1)
+        else if($result->num_rows > 1)
             return -2;
 
         // otherwise, the id as promised
@@ -377,7 +377,7 @@ class DatabaseQuery {
         {
             throw new Exception(
                 "Error updating entry badges for $id: "
-                . $this->conn->error()
+                . $this->conn->error
             );
         }
     }
@@ -389,7 +389,7 @@ class DatabaseQuery {
         {
             throw new Exception(
                 "Error calling stored procedure $procedure: "
-                . $this->conn->error()
+                . $this->conn->error
             );
         }
         $data = $this->conn->store_result();
@@ -417,7 +417,7 @@ class DatabaseQuery {
        {
            throw new Exception(
                "Error updating participant $username: "
-               . $this->conn->error()
+               . $this->conn->error
            );
        }
     }

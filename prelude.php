@@ -1,6 +1,7 @@
 <?php
 require_once('database.php');
 require_once('preferences.php');
+require_once('helpers.php');
 use SCBot\Database\DatabaseQuery;
 use SCBot\Configuration\Configuration;
 use SCBot\Preferences\Preferences;
