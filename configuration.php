@@ -39,5 +39,17 @@ class Configuration
             $settings['DB_COLLATE']
         );
     }
+
+    // Heroku forces you to use env variables
+    public static function loadFromEnvVars(){
+        return new Configuration(
+            getenv('DB_NAME', ''),
+            getenv('DB_USER', ''),
+            getenv('DB_PASSWORD', ''),
+            getenv('DB_HOST', ''),
+            getenv('DB_CHARSET', ''),
+            getenv('DB_COLLATE', '')
+        );
+    }
 }
 ?>
