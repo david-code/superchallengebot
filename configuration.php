@@ -25,6 +25,16 @@ class Configuration
         $this->dbCollate = $dbCollate;
     }
 
+    public static function loadConfig() {
+        $heroku = getenv('HEROKU', false);
+        if ($heroku === false) {
+            $config = Configuration::loadFromFile('bot.conf');
+        } else {
+            $config = Configuration::loadFromEnvVars();
+        }
+        return $config;
+    }
+
     /**
      * Load the configuration from a file
      */

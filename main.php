@@ -12,12 +12,7 @@ use SCBot\Update\Updater;
 
 try {
     $testing = getenv('SCBOT_TESTING', true);
-    $heroku = getenv('HEROKU', false);
-    if ($heroku === false) {
-        $config = Configuration::loadFromFile('bot.conf');
-    } else {
-        $config = Configuration::loadFromEnvVars();
-    }
+    $config = Configuration::loadConfig();
     $db = DatabaseQuery::fromConfig($config);
     $pref = $db->getPreferences();
     $twit = Twitter::fromPreferences($pref, $testing);

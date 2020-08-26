@@ -9,7 +9,7 @@ use SCBot\Preferences\Preferences;
 // setup db connection on first connection
 if (!array_key_exists("db", $GLOBALS)
     || !array_key_exists("preferences", $GLOBALS)) {
-    $conf = Configuration::loadFromFile("bot.conf");
+    $conf = Configuration::loadConfig();
     $db = DatabaseQuery::fromConfig($conf);
     $GLOBALS['db'] = $db;
     $GLOBALS['preferences'] = $db->getPreferences();
