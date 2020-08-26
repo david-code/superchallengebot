@@ -23,6 +23,8 @@ services:
       - db
     networks:
       - backend
+    environment:
+      SCBOT_TESTING: "true"
     volumes:
       - type: bind
         source: .

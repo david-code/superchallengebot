@@ -2,48 +2,6 @@
 
 include_once('prelude.php');
 
-getParticipantData();
-
-?>
-
-<html>
-<head>
-    <link rel="shortcut icon" href="favicon.ico">
-    <title>Language Super Challenge</title>
-    <link rel="stylesheet" type="text/css" href="style/style.css"/>
-    <meta charset="utf-8"/>
-</head>
-<body>
-    <script src="script/jquery-1.8.2.min.js"></script>
-    <script src="script/raphael-min.js"></script>
-    <script src="script/morris.min.js"></script>
-    <script src="script/participant.js"></script>
-
-    <div id='background'>
-        <div class='centered'>
-            <div class='left'></div>
-            <div class='right'></div>
-        </div>
-    </div>
-
-    <div id='headerback'>
-        <div id='header'>
-            <?php printHeaderLine(); ?>
-            <a href="index.php" class='headerlink' id='backlink'><div class='headericon' id='backicon'></div>back</a>
-        </div>
-    </div>
-
-    <div id='main'>
-
-    <div class='shortdesc'>
-        <?php printInfoLine(); ?>
-    </div>
-
-    <?php printLanguageSections() ?>
-
-    </div>
-
-<?php
 
 function getParticipantData()
 {
@@ -88,6 +46,7 @@ function printLanguageSections()
 function printLanguageSection($entry)
 {
     global $preferences;
+    global $db;
     $books = round($entry['PagesRead'] / $preferences->BOOK_PAGES, 1);
     $films = round($entry['MinutesWatched'] / $preferences->FILM_MINUTES, 1);
 
@@ -107,7 +66,7 @@ function printLanguageSection($entry)
     if($streak['Longest'] != $entry['LongestStreak'] ||
        $streak['Current'] != $entry['CurrentStreak'] ||
        $sprint != $entry['LongestSprint']) {
-        updateEntryBadges($entryid, $sprint, $streak['Longest'], $streak['Current']);
+        $db->updateEntryBadges($entryid, $sprint, $streak['Longest'], $streak['Current']);
     }
 
     // semi-html stuff
@@ -122,14 +81,14 @@ function printLanguageSection($entry)
     /* $bookshtml = "Read $books book".($books==1?"":"s"). */
     /*         getRateHtml($books).getDisplayButtonsHtml($bookkey); */
     $bookshtml = "Read $books book".($books==1?"":"s").
-            getRateHtml($books).getDisplayButtonsHtml($bookkey).
-      "(at this rate you'll finish with " . getValueAtEnd($books) . " book".($books==1?")":"s)");
+                 getRateHtml($books).getDisplayButtonsHtml($bookkey).
+                 "(at this rate you'll finish with " . getValueAtEnd($books) . " book".($books==1?")":"s)");
     $filmkey = $languagecode."films";
     /* $filmshtml = "Watched $films film".($films==1?"":"s"). */
     /*         getRateHtml($films).getDisplayButtonsHtml($filmkey); */
     $filmshtml = "Watched $films film".($films==1?"":"s").
-            getRateHtml($films).getDisplayButtonsHtml($filmkey).
-      "(at this rate you'll finish with " . getValueAtEnd($films) . " film".($films==1?")":"s)");
+                 getRateHtml($films).getDisplayButtonsHtml($filmkey).
+                 "(at this rate you'll finish with " . getValueAtEnd($films) . " film".($films==1?")":"s)");
 
     $booksectionhtml = getSectionHtml($bookactions, $bookkey, 'Total Read');
     $filmsectionhtml = getSectionHtml($filmactions, $filmkey, 'Total Watched');
@@ -222,7 +181,7 @@ function getActionData($entryid, $actioncode, $defaultamount, $typestring, $defa
         $titlestring = ($action['TextData'] ? "<b>".$action['TextData']."</b>" : "<i>".$defaulttitle."</i>");
         // if we don't have a title, always show the amount
         $amountstring = ($action['AmountData'] != $defaultamount || $titlestring == "<i></i>"
-                ? " <i>".$action['AmountData']." ".$typestring."</i>" : "");
+                       ? " <i>".$action['AmountData']." ".$typestring."</i>" : "");
 
         $liststring .= "<span class='listdate'>$datestring</span>
                         <span class='listtitle'>$titlestring</span>
@@ -275,7 +234,7 @@ function getSprintData($bookactions, $filmactions)
 function getStreakData($times)
 {
 
-   global $preferences;
+    global $preferences;
 
     // streaks and sprints
     $longeststreak = 0;
@@ -327,21 +286,59 @@ function getStreakData($times)
 
 function getValueAtEnd ($value)
 {
-  global $preferences;
+    global $preferences;
 
-  $startdate = new DateTime($preferences->START_DATE);
-  $enddate = new DateTime($preferences->END_DATE);
-  $now = new DateTime();
-  $startinterval = $startdate->diff($now);
-  $endinterval = $enddate->diff($now);
-  $startLapse = $startinterval->format('%a');
-  $endLapse = $endinterval->format('%a');
-  $currentRunRate =  $value/$startLapse;
-  $finalValue = (float)$value + ($currentRunRate * $endLapse);
+    $startdate = new DateTime($preferences->START_DATE);
+    $enddate = new DateTime($preferences->END_DATE);
+    $now = new DateTime();
+    $startinterval = $startdate->diff($now);
+    $endinterval = $enddate->diff($now);
+    $startLapse = $startinterval->format('%a');
+    $endLapse = $endinterval->format('%a');
+    $currentRunRate =  $value/$startLapse;
+    $finalValue = (float)$value + ($currentRunRate * $endLapse);
 
-  return number_format($finalValue, 2, '.', '');
+    return number_format($finalValue, 2, '.', '');
 
 }
 
+getParticipantData();
 
 ?>
+
+<html>
+<head>
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>Language Super Challenge</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css"/>
+    <meta charset="utf-8"/>
+</head>
+<body>
+    <script src="script/jquery-1.8.2.min.js"></script>
+    <script src="script/raphael-min.js"></script>
+    <script src="script/morris.min.js"></script>
+    <script src="script/participant.js"></script>
+
+    <div id='background'>
+        <div class='centered'>
+            <div class='left'></div>
+            <div class='right'></div>
+        </div>
+    </div>
+
+    <div id='headerback'>
+        <div id='header'>
+            <?php printHeaderLine(); ?>
+            <a href="index.php" class='headerlink' id='backlink'><div class='headericon' id='backicon'></div>back</a>
+        </div>
+    </div>
+
+    <div id='main'>
+
+    <div class='shortdesc'>
+        <?php printInfoLine(); ?>
+    </div>
+
+    <?php printLanguageSections() ?>
+
+    </div>

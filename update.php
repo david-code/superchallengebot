@@ -76,6 +76,7 @@ class Updater
             $lastreadid = $this->processTweet($tweet);
         }
 
+        loginfo('Setting last twitter id: ' . $lastreadid);
         $this->db->setPreference('last_twitter_id', $lastreadid);
         return true;
     }
@@ -85,38 +86,41 @@ class Updater
     {
         $contents = strtolower($tweet->text);
 
-        if (($this->testing && !strpos($contents, "#test"))
-            || (!$this->testing && strpos($contents, "#test")))
-        {
-            return $tweet->id_str;
-        }
         loginfo("Processing tweet " . $tweet->id_str . " from user "
               . $tweet->user->screen_name. "\n" . $contents );
         $tweet->information = $this->getTweetInfo($tweet);
 
         $processed = false;
         $register = strpos($contents, "#register");
-        if ($register)
+
+        if ($register !== false)
         {
             $this->processRegistration($tweet);
             $processed = true;
         }
 
         $undo = strposa($contents, array('#undo', '#delete'));
-        if (!$processed && $undo)
+        if (!$processed && $undo !== false)
         {
             $this->processUndo($tweet);
             $processed = true;
         }
 
+        $edit = strposa($contents, array("#edit", "#update"));
+        if(!$processed && $edit !== false)
+        {
+            $this->processEdit($tweet);
+            $processed = true;
+        }
+
         if (!$processed && $this->findEntryId($tweet) < 0)
         {
-            $this->replyEntryErrorTweet($tweet);
+            $this->twit->replyEntryErrorTweet($tweet);
             $processed = true;
         }
 
         $giveup = strpos($contents, "#giveup");
-        if (!$processed && $giveup)
+        if (!$processed && $giveup !== false)
         {
             $this->processGiveup($tweet);
             $processed = true;
@@ -133,12 +137,7 @@ class Updater
             loginfo("Error processing tweet: " . $tweet->id_str);
         }
 
-        if (!$this->testing)
-        {
-            return $tweet->id_str;
-        }
-
-        return null;
+        return $tweet->id_str;
     }
 
     public function getTweetInfo($tweet)
@@ -252,6 +251,7 @@ class Updater
 
         // the action code must not be 'del' or 'edt' (ie, we can't have
         // already undone this action.
+        loginfo("Started editing");
         $targetaction = $this->db->getAction($tweet->in_reply_to_status_id_str);
         if(!$targetaction) {
             $this->twit->replyTweet($tweet, "Which tweet do you want to edit? Reply to your own tweet that contains the mistake to edit it.");
@@ -295,6 +295,8 @@ class Updater
             return;
         }
 
+        loginfo('Old id: ' . $tweet->in_reply_to_status_id_str);
+        loginfo('New id: ' . $tweet->id_str);
         // update the existing action code to be edited
         $this->db->updateAction(
             $tweet->in_reply_to_status_id_str, 'edt'
@@ -313,7 +315,7 @@ class Updater
             $editaction['AmountData']);
 
         // roll back the previous data
-        $targettype = $this->$prefs->CONTENTTYPE[substr($targetaction['ActionCode'], 4)];
+        $targettype = $this->prefs->CONTENTTYPE[substr($targetaction['ActionCode'], 4)];
         $this->db->incrementEntryRecord(
             $targetaction['EntryId'],
             $this->prefs->ENTRYCONTENT[$targettype],

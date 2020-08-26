@@ -109,10 +109,9 @@ class Twitter
         $replytoid = $tweet->id_str;
 
         loginfo("Replied to ".$replytoid." with ".$message.$this->testing);
-        if(!$this->testing)
-            $this->twit->post('statuses/update',
-                        array('status' => $message,
-                              'in_reply_to_status_id' => $replytoid));
+        $this->twit->post('statuses/update',
+                          array('status' => $message,
+                                'in_reply_to_status_id' => $replytoid));
     }
 
     function replyEntryErrorTweet($tweet)

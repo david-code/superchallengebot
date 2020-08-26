@@ -320,7 +320,7 @@ class DatabaseQuery {
         }
 
         // we should always affect 1 row
-        return ($result->affected_rows($link) == 1);
+        return ($this->conn->affected_rows == 1);
     }
 
     function getActionEntryId($actionid) {
@@ -368,7 +368,7 @@ class DatabaseQuery {
     function updateEntryBadges($id, $longestsprint, $longeststreak, $currentstreak)
     {
         // update
-        $data = $this->db->query(
+        $data = $this->conn->query(
             "UPDATE Entries SET LongestSprint='$longestsprint', "
             . "LongestStreak='$longeststreak', "
             . "CurrentStreak='$currentstreak' "

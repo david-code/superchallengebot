@@ -66,8 +66,10 @@ function printParticipants()
         $minuteswatched = $info['MinutesWatched'];
         $pagesread = $info['PagesRead'];
 
-        $books = round($pagesread / $preferences->BOOK_PAGES);
-        $films = round($minuteswatched / $preferences->FILM_MINUTES);
+        loginfo('book pages: ' . $preferences->BOOK_PAGES);
+
+        $books = floor($pagesread / $preferences->BOOK_PAGES);
+        $films = floor($minuteswatched / $preferences->FILM_MINUTES);
 
         // figure out sort order
         $rowindex++;
