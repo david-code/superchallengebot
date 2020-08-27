@@ -14,9 +14,11 @@ function showUpdateTime()
         <a href='#' onclick='resetPreferences();'>Clear Local Data</a></p>";
 }
 
+// hacky
 function printDaysLeft()
 {
-    $difference = mktime(0, 0, 0, 01, 01, 2016) - time();
+
+    $difference = mktime(0, 0, 0, 01, 01, 2021) - time();
     if ($difference < 0) { $difference = 0; }
     $daysleft = floor($difference/60/60/24);
 

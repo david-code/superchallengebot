@@ -64,6 +64,13 @@ class Twitter
         $args['stringify_ids'] = "true";
         $followers = $this->twit->get('followers/ids', $args);
 
+        // check for errors
+        if (!property_exists($followers, 'ids')) {
+            // problem accessing followers
+            var_dump($followers);
+            throw new Exception("Unexpected problem accessing twitter followers");
+        }
+
         // the smaller numbers are newer followers - so we can just split off the first
         // 100 and use them, hopefully no more than 100 people follow us per given
         // update cycle!

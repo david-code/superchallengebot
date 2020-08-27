@@ -195,7 +195,7 @@ DELIMITER ;
 
 -- ----------- INSERT DUMMY DATA -------------------
 
-
+/*
 INSERT INTO Participants VALUES (
 'dummy','dummy','feed_data','UK',
 'https://abs.twimg.com/sticky/default_profile_images/default_profile_6_normal.png',
@@ -209,7 +209,7 @@ INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint
 VALUES ('dummy','fr', 0,0,0,0,0 );
 
 INSERT INTO Entries(UserName,LanguageCode,PagesRead,MinutesWatched,LongestSprint,LongestStreak,CurrentStreak)
-VALUES ('dummy','egy', 0,0,0,0,0 );
+VALUES ('dummy','egy', 0,0,0,0,0 ); */
 
 
 -- --------------- INSERT STATIC VALUES -------------------------------
@@ -229,8 +229,8 @@ INSERT INTO Preferences (Name, Value) VALUES ('book_pages',            50);
 INSERT INTO Preferences (Name, Value) VALUES ('film_minutes',          90);
 INSERT INTO Preferences (Name, Value) VALUES ('last_userupdate_index', 200);
 
-INSERT INTO Preferences (Name, Value) VALUES ('StartDate', '2016-05-01 00:00:00');
-INSERT INTO Preferences (Name, Value) VALUES ('EndDate', '2017-12-31 11:59:00');
+INSERT INTO Preferences (Name, Value) VALUES ('StartDate', '2020-05-01 00:00:00');
+INSERT INTO Preferences (Name, Value) VALUES ('EndDate', '2021-12-31 11:59:00');
 
 INSERT INTO Language (Code, Name) VALUES ('af','Afrikaans ');
 INSERT INTO Language (Code, Name) VALUES ('sq','Albanian');
